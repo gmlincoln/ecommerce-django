@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Order Tracking" %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8 text-center">{% trans "Track Your Order" %}</h1>
+
+    <div class="bg-white rounded-lg shadow-lg p-8">
+        <form method="get" class="mb-8">
+            <div class="flex gap-2">
+                <input type="text" name="order_number" value="{{ order_number|default:'' }}"
+                    placeholder="{% trans 'Enter Order Number (e.g. 2026012201)' %}"
+                    class="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-bold">
+                    {% trans "Track" %}
+                </button>
+            </div>
+        </form>
+
+        {% if order %}
+        <div class="border-t pt-8">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-xl font-bold mb-1">{% trans "Order" %} #{{ order.order_number }}</h2>
+                    <p class="text-gray-500 text-sm">{% trans "Placed on" %} {{ order.created_at|date:"M d, Y" }}</p>
+                </div>
+                <div class="text-right">
+                    {% if order.status == 'completed' %}
+                    <a href="{% url 'generate_invoice_pdf' order.id %}" target="_blank"
+                        class="inline-block bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition-colors mb-2">
+                        <i class="fas fa-file-invoice mr-1"></i> {% trans "View Invoice" %}
+                    </a>
+                    <br>
+                    {% endif %}
+                    <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold 
+                        {% if order.delivery_status == 'delivered' %}bg-green-100 text-green-800
+                        {% elif order.delivery_status == 'cancelled' %}bg-red-100 text-red-800
+                        {% else %}bg-blue-100 text-blue-800{% endif %}">
+                        {{ order.get_delivery_status_display }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Tracking Progress Steps -->
+            <div class="relative">
+                {% if order.status == 'cancelled' %}
+                <div class="bg-red-50 p-8 rounded-lg border border-red-200 text-center">
+                    <div
+                        class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-times text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-red-800 mb-2">Tracking Unavailable</h3>
+                    <p class="text-red-600">
+                        {% trans "This order tracking is cancelled because the order was not completed." %}
+                    </p>
+                </div>
+                {% else %}
+                <div class="absolute left-4 top-0 h-full w-0.5 bg-gray-200"></div>
+
+                <div class="space-y-8 relative">
+                    <!-- Step 1: Order Placed -->
+                    <div class="flex items-start">
+                        <div
+                            class="w-8 h-8 rounded-full flex items-center justify-center z-10 
+                            {% if order.status != 'cancelled' %}bg-blue-600 text-white{% else %}bg-gray-300 text-gray-500{% endif %}">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3
+                                class="font-bold {% if order.status != 'cancelled' %}text-blue-600{% else %}text-gray-500{% endif %}">
+                                {% trans "Order Placed" %}
+                            </h3>
+                            <p class="text-sm text-gray-500">{% trans "We have received your order." %}</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Processing -->
+                    <div class="flex items-start">
+                        <div
+                            class="w-8 h-8 rounded-full flex items-center justify-center z-10 
+                            {% if order.delivery_status == 'processing' or order.delivery_status == 'shipped' or order.delivery_status == 'out_for_delivery' or order.delivery_status == 'delivered' %}bg-blue-600 text-white{% else %}bg-gray-300 text-white{% endif %}">
+                            <i class="fas fa-box-open"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3
+                                class="font-bold {% if order.delivery_status == 'processing' or order.delivery_status == 'shipped' or order.delivery_status == 'out_for_delivery' or order.delivery_status == 'delivered' %}text-blue-600{% else %}text-gray-500{% endif %}">
+                                {% trans "Processing" %}
+                            </h3>
+                            <p class="text-sm text-gray-500">{% trans "We are preparing your order." %}</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Shipped -->
+                    <div class="flex items-start">
+                        <div
+                            class="w-8 h-8 rounded-full flex items-center justify-center z-10 
+                            {% if order.delivery_status == 'shipped' or order.delivery_status == 'out_for_delivery' or order.delivery_status == 'delivered' %}bg-blue-600 text-white{% else %}bg-gray-300 text-white{% endif %}">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3
+                                class="font-bold {% if order.delivery_status == 'shipped' or order.delivery_status == 'out_for_delivery' or order.delivery_status == 'delivered' %}text-blue-600{% else %}text-gray-500{% endif %}">
+                                {% trans "Shipped" %}
+                            </h3>
+                            <p class="text-sm text-gray-500">{% trans "Your order is on the way." %}</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Out for Delivery -->
+                    <div class="flex items-start">
+                        <div
+                            class="w-8 h-8 rounded-full flex items-center justify-center z-10 
+                            {% if order.delivery_status == 'out_for_delivery' or order.delivery_status == 'delivered' %}bg-blue-600 text-white{% else %}bg-gray-300 text-white{% endif %}">
+                            <i class="fas fa-shipping-fast"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3
+                                class="font-bold {% if order.delivery_status == 'out_for_delivery' or order.delivery_status == 'delivered' %}text-blue-600{% else %}text-gray-500{% endif %}">
+                                {% trans "Out for Delivery" %}
+                            </h3>
+                            <p class="text-sm text-gray-500">{% trans "Our rider is near your location." %}</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 5: Delivered -->
+                    <div class="flex items-start">
+                        <div
+                            class="w-8 h-8 rounded-full flex items-center justify-center z-10 
+                            {% if order.delivery_status == 'delivered' %}bg-green-600 text-white{% else %}bg-gray-300 text-white{% endif %}">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3
+                                class="font-bold {% if order.delivery_status == 'delivered' %}text-green-600{% else %}text-gray-500{% endif %}">
+                                {% trans "Delivered" %}
+                            </h3>
+                            <p class="text-sm text-gray-500">{% trans "Your order has been delivered." %}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if order.show_pay_now %}
+            <div class="mt-8 p-6 bg-red-50 rounded-lg border border-red-200">
+                <h3 class="font-bold text-red-800 mb-2">
+                    {% if order.status == 'pending' %}
+                    ⚠️ {% trans "Complete Your Payment" %}
+                    {% else %}
+                    🔄 {% trans "Payment Retry" %}
+                    {% endif %}
+                </h3>
+                <p class="text-red-700 text-sm mb-4">
+                    {% if order.status == 'pending' %}
+                    {% trans "Your order will be cancelled in" %}
+                    {{ order.minutes_remaining }}
+                    {% trans "minutes. Complete payment now." %}
+                    {% else %}
+                    {% trans "Payment failed. You can try again to complete the order." %}
+                    {% endif %}
+                </p>
+                <a href="{% url 'ssl_payment' order.id %}"
+                    class="inline-block bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 transition-colors">
+                    💳
+                    {% if order.status == 'pending' %}
+                    {% trans "Pay Now" %}
+                    {% else %}
+                    {% trans "Try Again" %}
+                    {% endif %}
+                    - ৳ {{ order.total }}
+                </a>
+            </div>
+            {% endif %}
+
+            {% if order.delivery_status == 'pending' %}
+            <div class="mt-8 p-4 bg-yellow-50 rounded-lg border border-yellow-200 text-sm text-yellow-800">
+                <i class="fas fa-info-circle mr-2"></i>
+                {% trans "Your order is currently pending approval." %}
+            </div>
+            {% endif %}
+
+        </div>
+        {% elif order_number %}
+        <div class="text-center py-8 text-gray-500">
+            <i class="fas fa-search text-4xl mb-4"></i>
+            <p>{% trans "Order not found. Please check your order number." %}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

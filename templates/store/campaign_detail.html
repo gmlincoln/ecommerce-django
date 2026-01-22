@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{{ campaign.title }} - e-Shop{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Campaign Header -->
+    <div class="relative rounded-3xl overflow-hidden bg-gray-900 mb-16 shadow-2xl aspect-[21/7]">
+        {% if campaign.image %}
+        <img src="{{ campaign.image.url }}" alt="{{ campaign.title }}" class="w-full h-full object-cover opacity-60">
+        {% endif %}
+        <div
+            class="absolute inset-0 flex flex-col justify-center items-center text-center p-8 bg-gradient-to-t from-black/80 to-transparent">
+            <span
+                class="inline-block px-4 py-1 bg-yellow-400 text-gray-900 rounded-full text-sm font-bold mb-4 animate-bounce">
+                {% trans "LIVE CAMPAIGN" %}
+            </span>
+            <h1 class="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter mb-4">{{ campaign.title }}
+            </h1>
+            <p class="text-white/80 text-lg md:text-xl max-w-2xl font-medium">Exclusive offers on carefully selected
+                premium products during this event.</p>
+        </div>
+    </div>
+
+    <!-- Products Header -->
+    <div class="flex items-center justify-between mb-12">
+        <div>
+            <h2 class="text-3xl font-black text-gray-900">Campaign Exclusive Products</h2>
+            <p class="text-gray-500 font-medium">Limited time offers</p>
+        </div>
+        <div class="h-1 bg-yellow-400 w-24"></div>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {% for p in products %}
+        <div
+            class="bg-white rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden product-card group flex flex-col h-full border border-yellow-200">
+            <!-- Image Container -->
+            <div class="relative overflow-hidden bg-gray-50 h-64 flex-shrink-0">
+                <a
+                    href="{% if p.slug %}{% url 'product_detail' p.slug %}{% else %}{% url 'product_detail_id' p.id %}{% endif %}">
+                    {% if p.image %}
+                    <img src="{{p.image.url}}"
+                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        loading="lazy" alt="{{ p.name }}">
+                    {% else %}
+                    <div class="w-full h-full flex items-center justify-center text-gray-300">
+                        <i class="fas fa-image text-5xl"></i>
+                    </div>
+                    {% endif %}
+                </a>
+
+                <div
+                    class="absolute top-4 left-4 bg-red-600 text-white text-sm font-black px-4 py-2 rounded-full uppercase tracking-widest">
+                    Save {{ campaign.discount_percent }}%</div>
+
+                <!-- Quick View Overlay -->
+                <div
+                    class="absolute inset-0 bg-blue-600/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 flex items-center justify-center">
+                    <a href="{% if p.slug %}{% url 'product_detail' p.slug %}{% else %}{% url 'product_detail_id' p.id %}{% endif %}"
+                        class="bg-white text-blue-600 px-6 py-2 rounded-full font-bold shadow-lg hover:bg-blue-600 hover:text-white transition-colors flex items-center gap-2">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+                </div>
+            </div>
+
+            <!-- Product Info -->
+            <div class="p-6 flex flex-col flex-grow">
+                <a href="{% if p.slug %}{% url 'product_detail' p.slug %}{% else %}{% url 'product_detail_id' p.id %}{% endif %}"
+                    class="block">
+                    <h2 class="font-bold text-lg text-gray-900 line-clamp-2 hover:text-blue-600 transition-colors h-14">
+                        {{p.name}}</h2>
+                </a>
+
+                <div class="flex flex-col mt-4">
+                    <p class="text-gray-400 text-sm line-through">৳ {{p.price}}</p>
+                    <p class="text-green-600 text-2xl font-black campaign-discount-price" data-price="{{p.price}}" data-discount="{{ campaign.discount_percent }}">৳ 0</p>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-gray-50">
+                    <a href="{% url 'add_to_cart_campaign' p.id campaign.id %}"
+                        class="w-full bg-yellow-400 text-gray-900 px-4 py-2 rounded-xl block text-center font-bold hover:bg-yellow-300 transition-all duration-300 add-to-cart-btn shadow-lg"
+                        data-price="{{p.price}}"
+                        data-discount="{{ campaign.discount_percent }}">
+                        <i class="fas fa-shopping-bag mr-2"></i><span>Add to Cart</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-24 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+            <p class="text-gray-400 text-lg font-bold">No products found in this campaign.</p>
+            <a href="{% url 'home' %}" class="text-blue-600 font-bold mt-2 inline-block hover:underline">Back to
+                Shop</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    // Calculate campaign discount prices
+    document.querySelectorAll('.campaign-discount-price').forEach(el => {
+        const originalPrice = parseFloat(el.getAttribute('data-price'));
+        const discountPercent = parseInt(el.getAttribute('data-discount'));
+        const discountedPrice = originalPrice * (1 - discountPercent / 100);
+        el.textContent = '৳ ' + discountedPrice.toFixed(2);
+    });
+
+    // Handle add to cart with discounted price
+    document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            const originalPrice = parseFloat(this.getAttribute('data-price'));
+            const discountPercent = parseInt(this.getAttribute('data-discount'));
+            const discountedPrice = originalPrice * (1 - discountPercent / 100);
+            
+            // Store the discounted price in session for cart
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = this.href;
+            
+            // Add discounted price as hidden field
+            const priceInput = document.createElement('input');
+            priceInput.type = 'hidden';
+            priceInput.name = 'discounted_price';
+            priceInput.value = discountedPrice.toFixed(2);
+            form.appendChild(priceInput);
+            
+            // Don't actually submit, just use the link behavior
+            // The cart will use the original price from the product
+        });
+    });
+</script>
+{% endblock %}

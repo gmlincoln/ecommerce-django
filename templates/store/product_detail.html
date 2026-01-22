@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{{ product.name }} - e-Shop{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Breadcrumbs -->
+    <nav class="flex mb-8 text-sm font-medium text-gray-500" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2">
+            <li><a href="{% url 'home' %}" class="hover:text-blue-600 transition-colors">{% trans "Home" %}</a></li>
+            <li><i class="fas fa-chevron-right text-[10px] opacity-40"></i></li>
+            <li><a href="{% url 'home' %}{% if product.category.slug %}?category={{ product.category.slug }}{% endif %}"
+                    class="hover:text-blue-600 transition-colors">{{ product.category.name|default:"General" }}</a></li>
+            <li><i class="fas fa-chevron-right text-[10px] opacity-40"></i></li>
+            <li class="text-gray-900 font-bold truncate max-w-[200px]">{{ product.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="flex flex-col lg:flex-row gap-16">
+        <!-- Product Image Gallery -->
+        <div class="flex-grow lg:w-1/2">
+            <div class="sticky top-24 space-y-4">
+                <div
+                    class="aspect-square rounded-3xl overflow-hidden bg-gray-50 border border-gray-100 shadow-sm relative group">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}"
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                    {% else %}
+                    <div class="w-full h-full flex items-center justify-center text-gray-200">
+                        <i class="fas fa-image text-8xl"></i>
+                    </div>
+                    {% endif %}
+
+                    {% if product.is_featured %}
+                    <div
+                        class="absolute top-6 left-6 bg-yellow-400 text-gray-900 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest shadow-xl">
+                        {% trans "Featured Selection" %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Thumbnails placeholder (Can be dynamic if multi-image is added later) -->
+                <div class="flex gap-4">
+                    <div class="w-24 h-24 rounded-2xl border-2 border-blue-600 overflow-hidden cursor-pointer">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" class="w-full h-full object-cover">
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Information -->
+        <div class="lg:w-1/2 flex flex-col">
+
+            <h1 class="text-4xl md:text-5xl font-black text-gray-900 mb-6 leading-tight">{{ product.name }}</h1>
+
+            <div class="flex items-center gap-6 mb-8 pb-8 border-b border-gray-100">
+                <div class="text-4xl font-black text-blue-600">৳ {{ product.price }}</div>
+                <div class="flex items-center gap-2">
+                    <div class="flex text-yellow-400">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <span class="text-sm font-bold text-gray-400">(4.9 • 120+ Reviews)</span>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="prose prose-blue max-w-none text-gray-600 mb-10 leading-relaxed">
+                <h3 class="text-gray-900 font-black uppercase tracking-widest text-sm mb-4">Product Description</h3>
+                <p>
+                    {% if product.description %}
+                    {{ product.description }}
+                    {% else %}
+                    No description available for this premium item yet. This product is carefully curated and
+                    quality-checked to meet our e-Shop standards.
+                    {% endif %}
+
+                </p>
+            </div>
+
+            <!-- Features Mini Grid -->
+            <div class="grid grid-cols-2 gap-4 mb-10">
+                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl">
+                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm">
+                        <i class="fas fa-truck-fast"></i>
+                    </div>
+                    <span class="text-xs font-bold text-gray-700">Fast Delivery</span>
+                </div>
+                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl">
+                    <div
+                        class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-green-600 shadow-sm">
+                        <i class="fas fa-shield-check"></i>
+                    </div>
+                    <span class="text-xs font-bold text-gray-700">Official Warranty</span>
+                </div>
+            </div>
+
+            <!-- Add to Cart Action -->
+            <div class="mt-auto space-y-6">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center border border-gray-200 rounded-2xl p-1 bg-white shadow-sm">
+                        <button
+                            class="w-12 h-12 flex items-center justify-center text-gray-500 hover:text-blue-600 transition-colors"
+                            onclick="updateQty(-1)"><i class="fas fa-minus"></i></button>
+                        <input type="number" id="detailQty" value="1" min="1"
+                            class="w-12 text-center border-none focus:ring-0 font-black text-lg p-0" readonly>
+                        <button
+                            class="w-12 h-12 flex items-center justify-center text-gray-500 hover:text-blue-600 transition-colors"
+                            onclick="updateQty(1)"><i class="fas fa-plus"></i></button>
+                    </div>
+
+                    <a id="addToCartMain" href="{% url 'add_to_cart' product.id %}"
+                        class="flex-grow bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-4 hover:shadow-2xl hover:bg-blue-700 transition-all duration-300 transform active:scale-95 shadow-lg group">
+                        <i class="fas fa-shopping-bag group-hover:rotate-12 transition-transform"></i>
+                        <span>Add to Cart</span>
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-6 text-sm font-bold text-gray-400">
+                    <button class="flex items-center gap-2 hover:text-red-500 transition-colors"><i
+                            class="far fa-heart"></i> Add to Wishlist</button>
+                    <button class="flex items-center gap-2 hover:text-blue-600 transition-colors"><i
+                            class="fas fa-share-nodes"></i> Share</button>
+                    <div class="flex-grow"></div>
+                    <div class="flex items-center gap-2">
+                        <span
+                            class="w-2 h-2 rounded-full {% if product.stock > 0 %}bg-green-500{% else %}bg-red-500{% endif %}"></span>
+                        <span class="{% if product.stock > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                            {% if product.stock > 0 %}In Stock ({{ product.stock }}){% else %}Out of Stock{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Products Section -->
+    {% if related_products %}
+    <div class="mt-24">
+        <div class="flex items-center justify-between mb-12">
+            <h2 class="text-3xl font-black text-gray-900 uppercase tracking-tight">You May Also Like</h2>
+            <div class="h-1 bg-blue-600 w-24"></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {% for rp in related_products %}
+            <div
+                class="bg-white rounded-2xl border border-gray-100 p-4 transition-all duration-500 hover:shadow-2xl group">
+                <div class="aspect-square rounded-xl overflow-hidden bg-gray-50 mb-6 relative">
+                    {% if rp.image %}
+                    <img src="{{ rp.image.url }}"
+                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    {% endif %}
+                    <div
+                        class="absolute inset-0 bg-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <a href="{% if rp.slug %}{% url 'product_detail' rp.slug %}{% else %}{% url 'product_detail_id' rp.id %}{% endif %}"
+                            class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-xl scale-0 group-hover:scale-100 transition-transform duration-500"><i
+                                class="fas fa-expand"></i></a>
+                    </div>
+                </div>
+                <h4 class="font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-2 truncate">
+                    {{ rp.name }}</h4>
+                <p class="text-blue-600 font-black">৳ {{ rp.price }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function updateQty(delta) {
+        const input = document.getElementById('detailQty');
+        let val = parseInt(input.value) + delta;
+        if (val < 1) val = 1;
+        input.value = val;
+
+        // Update URL of add to cart button to handle quantity if needed 
+        // (Currently our add_to_cart view doesn't take qty as path param, 
+        // will need to update cart view logic if we want to pass initial qty)
+    }
+
+    // Since our current add_to_cart view only adds 1 item per click,
+    // we could update it later to handle quantity. For now, we'll keep it simple.
+    document.getElementById('addToCartMain').addEventListener('click', function (e) {
+        // Option 1: Update the href to pass qty (requires view change)
+        // Option 3: Visual feedback
+        this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i><span>Adding...</span>';
+    });
+</script>
+{% endblock %}

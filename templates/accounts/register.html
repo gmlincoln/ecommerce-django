@@ -1,0 +1,91 @@
+
+{% extends 'base.html' %}{% block content %}
+<div class="max-w-md mx-auto bg-white p-6 shadow rounded">
+<h1 class="text-2xl font-bold mb-4">Register</h1>
+
+<form method="post" enctype="multipart/form-data">
+{% csrf_token %}
+<div class="mb-4">
+<label class="block text-gray-700">First Name</label>
+<input name="first_name" value="{{ request.POST.first_name }}" class="border p-2 w-full" required>
+</div>
+<div class="mb-4">
+<label class="block text-gray-700">Last Name</label>
+<input name="last_name" value="{{ request.POST.last_name }}" class="border p-2 w-full" required>
+</div>
+<div class="mb-4">
+<label class="block text-gray-700">Email</label>
+<input type="email" name="email" value="{{ request.POST.email }}" class="border p-2 w-full" required>
+</div>
+<div class="mb-4">
+<label class="block text-gray-700">Username</label>
+<input name="username" value="{{ request.POST.username }}" class="border p-2 w-full" required>
+</div>
+<div class="mb-4">
+<label class="block text-gray-700">Password</label>
+<input type="password" name="password" value="{{ request.POST.password }}" class="border p-2 w-full" required minlength="6">
+</div>
+<div class="mb-4">
+<label class="block text-gray-700">Confirm Password</label>
+<input type="password" name="password_confirm" value="{{ request.POST.password_confirm }}" class="border p-2 w-full" required minlength="6">
+</div>
+<div class="mb-4">
+<label class="block text-gray-700">Profile Image</label>
+<input type="file" name="profile_image" id="profile_image" class="border p-2 w-full" accept="image/*">
+<img id="image_preview" class="mt-2 max-w-full h-32 object-cover hidden">
+</div>
+<button class="bg-green-600 text-white px-4 py-2 w-full">Register</button>
+</form>
+<p class="mt-4 text-center">Already have an account? <a href="/accounts/login/" class="text-blue-600">Login</a></p>
+</div>
+
+<script>
+document.getElementById('profile_image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('image_preview');
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.classList.add('hidden');
+    }
+});
+
+// Password confirmation validation
+document.getElementById('password_confirm').addEventListener('input', function() {
+    const password = document.querySelector('input[name="password"]').value;
+    const confirmPassword = this.value;
+    const submitBtn = document.querySelector('button[type="submit"]');
+    
+    if (password !== confirmPassword) {
+        this.setCustomValidity('Passwords do not match');
+        submitBtn.disabled = true;
+    } else {
+        this.setCustomValidity('');
+        submitBtn.disabled = false;
+    }
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const password = document.querySelector('input[name="password"]').value;
+    const confirmPassword = document.querySelector('input[name="password_confirm"]').value;
+    
+    if (password !== confirmPassword) {
+        e.preventDefault();
+        alert('Passwords do not match!');
+        return false;
+    }
+    
+    if (password.length < 6) {
+        e.preventDefault();
+        alert('Password must be at least 6 characters long!');
+        return false;
+    }
+});
+</script>
+{% endblock %}

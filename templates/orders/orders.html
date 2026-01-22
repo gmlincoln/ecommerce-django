@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">{{ page_title|default:"My Orders" }}</h1>
+{% for o in orders %}
+<div class="bg-white p-4 mb-4 shadow rounded">
+    <h2 class="font-bold">Order #{{ o.order_number }} - {{ o.created_at|date:"M d, Y" }}</h2>
+    <p class="text-gray-600">Total: ৳ {{ o.total }}</p>
+    <p class="text-sm text-gray-500">Order Time: {{ o.created_at|date:"M d, Y g:i A" }}</p>
+    <p class="text-sm">
+        <span class="font-semibold">Status:</span>
+        <span
+            class="{% if o.status == 'completed' %}text-green-600{% elif o.status == 'pending' %}text-yellow-600{% elif o.status == 'failed' %}text-red-600{% else %}text-gray-600{% endif %}">
+            {{ o.get_status_display }}
+        </span>
+        {% if o.payment_method != 'sslcommerz' or o.status == 'completed' or o.status == 'failed' %}
+        <span class="mx-2">|</span>
+        <span class="font-semibold">Delivery:</span>
+        <span class="font-medium text-blue-600">{{ o.get_delivery_status_display }}</span>
+        {% endif %}
+        {% if o.status == 'completed' %}
+        <span class="mx-2">|</span>
+        <a href="{% url 'generate_invoice_pdf' o.id %}" target="_blank"
+            class="text-blue-600 hover:text-blue-800 font-semibold">
+            <i class="fas fa-file-invoice mr-1"></i> View Invoice
+        </a>
+        {% endif %}
+    </p>
+    <p class="text-sm">
+        <span class="font-semibold">Payment Method:</span> {{ o.get_payment_method_display }}
+    </p>
+    {% if o.status == 'pending' and o.payment_method == 'sslcommerz' and o.payment_timeout %}
+    <p class="text-sm text-orange-600">
+        <span class="font-semibold">Payment Deadline:</span> {{ o.payment_timeout|date:"M d, Y g:i A" }}
+        {% if o.payment_timeout > now %}
+        <span class="text-red-600">(Expires in {{ o.payment_timeout|timeuntil }})</span>
+        {% else %}
+        <span class="text-red-600">(Expired - Order will be cancelled)</span>
+        {% endif %}
+    </p>
+    {% endif %}
+
+    {% if o.status == 'pending' %}
+    <div class="mt-3">
+        <a href="{% url 'cancel_order' o.id %}"
+            class="inline-block bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-700 transition-colors"
+            onclick="return confirm('Are you sure you want to cancel this order?')">
+            <i class="fas fa-times mr-1"></i> Cancel Order
+        </a>
+    </div>
+    {% endif %}
+
+    {% if o.show_pay_now %}
+    <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <h4 class="font-bold text-red-800 text-sm mb-2">⚠️ Complete Your Payment</h4>
+        <p class="text-red-700 text-sm mb-3">Your order will be cancelled in {{ o.minutes_remaining }} minutes. Complete
+            payment now to avoid cancellation.</p>
+        <a href="/orders/payment/{{ o.id }}/"
+            class="inline-block bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">
+            💳 Pay Now - ৳ {{ o.total }}
+        </a>
+    </div>
+    {% endif %}
+
+    {% if o.full_name %}
+    <div class="mt-2 p-2 bg-gray-50 rounded">
+        <h3 class="font-semibold text-sm">Shipping Address:</h3>
+        <p class="text-sm">{{ o.full_name }}</p>
+        {% if o.address_line_1 %}<p class="text-sm">{{ o.address_line_1 }}</p>{% endif %}
+        {% if o.address_line_2 %}<p class="text-sm">{{ o.address_line_2 }}</p>{% endif %}
+        <p class="text-sm">{{ o.city }}, {{ o.state }} {{ o.postal_code }}</p>
+        <p class="text-sm">{{ o.country }}</p>
+        {% if o.phone %}<p class="text-sm">Phone: {{ o.phone }}</p>{% endif %}
+    </div>
+    {% endif %}
+    <div class="mt-4">
+        <h3 class="font-semibold mb-2">Items:</h3>
+        <div class="space-y-3">
+            {% for item in o.orderitem_set.all %}
+            <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                <div class="flex items-center gap-3">
+                    {% if item.product.image %}
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}"
+                        class="w-12 h-12 object-cover rounded shadow-sm">
+                    {% else %}
+                    <div class="w-12 h-12 bg-gray-100 flex items-center justify-center rounded text-gray-400">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    {% endif %}
+                    <span class="font-medium text-gray-800">{{ item.product.name }} <span
+                            class="text-gray-500 font-normal">x{{ item.quantity }}</span></span>
+                </div>
+                <span class="font-semibold text-gray-900">৳ {{ item.price }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="text-center py-12 bg-white rounded-lg shadow">
+    <i class="fas fa-shopping-bag text-gray-300 text-6xl mb-4"></i>
+    <h3 class="text-xl font-bold text-gray-700 mb-2">{% trans "We are waiting for your first order" %}</h3>
+    <p class="text-gray-500 mb-6">{% trans "Explore our products and find something you love." %}</p>
+    <a href="{% url 'home' %}"
+        class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-semibold transition-colors">
+        {% trans "Start Shopping" %}
+    </a>
+</div>
+{% endfor %}
+{% endblock %}

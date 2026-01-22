@@ -1,0 +1,358 @@
+{% load i18n order_tags static %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}e-Shop{% endblock %}</title>
+    <link rel="icon" type="image/gif" href="{% static 'images/icon.gif' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body class="bg-gray-50">
+    <!-- Top Info Bar -->
+    <div class="bg-gray-800 text-white py-2 px-6 text-sm flex justify-between">
+        <div class="flex gap-8">
+            <a href="/" class="hover:text-blue-400" data-translate="home">Home</a>
+            <a href="{% url 'order_tracking' %}" class="hover:text-blue-400" data-translate="tracking">Tracking
+                Order</a>
+            {% get_payable_count user as payable_count %}
+            {% if payable_count > 0 %}
+            <a href="{% url 'paymentable_orders' %}" class="hover:text-blue-400" data-translate="payment">Payment</a>
+            {% endif %}
+        </div>
+        <div class="flex gap-4 items-center">
+            <span data-translate="call">Call: +880 1711 223 344</span>
+            <!-- Language Selector -->
+            <div class="relative group">
+                <button class="text-white flex items-center gap-1 hover:text-blue-400 text-sm font-semibold"
+                    id="langBtn">
+                    <i class="fas fa-globe"></i>
+                    <span id="currentLang">EN</span>
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div
+                    class="absolute right-0 mt-2 w-40 bg-white text-gray-800 rounded shadow-lg z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                    <a href="#" onclick="switchLanguage('en')"
+                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm font-semibold">
+                        English
+                    </a>
+                    <a href="#" onclick="switchLanguage('bn')"
+                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm font-semibold">
+                        বাংলা
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navigation -->
+    <nav class="bg-white shadow-md py-4 px-6">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <!-- Logo -->
+            <a href="{% url 'home' %}" class="text-2xl font-bold text-blue-600 flex items-center gap-2">
+                <img src="{% static 'images/icon.gif' %}" alt="Logo" class="h-8 w-8 object-contain">
+                <span>e-Shop</span>
+            </a>
+
+            <!-- Search Bar -->
+            <div class="flex-1 mx-12">
+                <form action="{% url 'home' %}" method="GET" class="flex gap-2">
+                    <input type="text" name="query" value="{{ query|default:'' }}" placeholder="{% trans 'Search' %}"
+                        class="flex-1 border border-gray-300 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-r-lg hover:bg-blue-700">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right Icons -->
+            <div class="flex items-center gap-8">
+                <!-- Cart -->
+                <a href="{% url 'cart' %}" class="relative text-gray-700 hover:text-blue-600 text-2xl"
+                    title="{% trans 'Shopping Cart' %}">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span
+                        class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold cart-count">0</span>
+                </a>
+
+                <!-- Profile Dropdown -->
+                {% if user.is_authenticated %}
+                <div class="relative group">
+                    <button class="flex items-center text-gray-700 hover:text-blue-600" title="{% trans 'Profile' %}">
+                        <i class="fas fa-user text-2xl"></i>
+                    </button>
+                    <div
+                        class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-2">
+                        <div class="px-4 py-2 border-b">
+                            <p class="font-semibold">{% trans 'Hello' %}, {{user.get_full_name|default:user.username}}
+                            </p>
+                            <p class="text-sm text-gray-500">{{user.email}}</p>
+                        </div>
+                        <a href="{% url 'profile' %}" class="block px-4 py-3 text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-user-circle mr-2"></i>{% trans "Visit Profile" %}
+                        </a>
+                        <a href="{% url 'orders' %}" class="block px-4 py-3 text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-box mr-2"></i>{% trans "My Orders" %}
+                        </a>
+                        <a href="{% url 'logout' %}" class="block px-4 py-3 text-red-600 hover:bg-gray-100 border-t">
+                            <i class="fas fa-sign-out-alt mr-2"></i>{% trans "Logout" %}
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="flex gap-4">
+                    <a href="{% url 'login' %}" class="text-gray-700 hover:text-blue-600 font-semibold"
+                        data-translate="login">Sign in</a>
+                    <span class="text-gray-400">|</span>
+                    <a href="{% url 'register' %}" class="text-gray-700 hover:text-blue-600 font-semibold"
+                        data-translate="register">Register</a>
+                </div>
+                {% endif %}
+            </div>
+    </nav>
+
+    <!-- Content -->
+    <div class="max-w-7xl mx-auto py-8 px-6 min-h-[60vh]">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white pt-16 pb-8 px-6 mt-12">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+            <!-- Company Info -->
+            <div class="space-y-6">
+                <a href="{% url 'home' %}" class="text-3xl font-bold text-blue-500 flex items-center gap-3 mb-4">
+                    <img src="{% static 'images/icon.gif' %}" alt="Logo" class="h-10 w-10 object-contain">
+                    <span>e-Shop</span>
+                </a>
+                <p class="text-gray-400 leading-relaxed">
+                    Your one-stop destination for premium quality products. We believe in providing the best
+                    shopping experience for our customers.
+                </p>
+                <div class="flex gap-4 pt-4">
+                    <a href="#"
+                        class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-all duration-300"><i
+                            class="fab fa-facebook-f"></i></a>
+                    <a href="#"
+                        class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-sky-400 transition-all duration-300"><i
+                            class="fab fa-twitter"></i></a>
+                    <a href="#"
+                        class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-gradient-to-tr from-yellow-400 to-purple-600 transition-all duration-300"><i
+                            class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-lg font-bold mb-6 border-b-2 border-blue-600 pb-2 w-fit" data-translate="shopTitle">Shop
+                </h3>
+                <ul class="space-y-4 text-gray-400">
+                    <li><a href="{% url 'home' %}" class="hover:text-blue-400 transition-colors flex items-center gap-2"
+                            data-translate="featuredProducts"><i class="fas fa-chevron-right text-xs"></i> Featured
+                            Products</a></li>
+                    <li><a href="{% url 'order_tracking' %}"
+                            class="hover:text-blue-400 transition-colors flex items-center gap-2"
+                            data-translate="trackOrderFooter"><i class="fas fa-chevron-right text-xs"></i> Track
+                            Order</a></li>
+                    <li><a href="{% url 'cart' %}" class="hover:text-blue-400 transition-colors flex items-center gap-2"
+                            data-translate="yourCartFooter"><i class="fas fa-chevron-right text-xs"></i> Your Cart</a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Help -->
+            <div>
+                <h3 class="text-lg font-bold mb-6 border-b-2 border-blue-600 pb-2 w-fit" data-translate="helpSupport">
+                    Help & Support</h3>
+                <ul class="space-y-4 text-gray-400">
+                    <li><a href="#" class="hover:text-blue-400 transition-colors flex items-center gap-2"
+                            data-translate="contactUs"><i class="fas fa-chevron-right text-xs"></i> Contact Us</a></li>
+                    <li><a href="#" class="hover:text-blue-400 transition-colors flex items-center gap-2"
+                            data-translate="faq"><i class="fas fa-chevron-right text-xs"></i> FAQ</a></li>
+                    <li><a href="{% url 'order_tracking' %}" class="hover:text-blue-400 transition-colors flex items-center gap-2"
+                            data-translate="shippingInfo"><i class="fas fa-chevron-right text-xs"></i> Shipping
+                            Information</a></li>
+                </ul>
+            </div>
+
+            <!-- Get in touch -->
+            <div>
+                <h3 class="text-lg font-bold mb-6 border-b-2 border-blue-600 pb-2 w-fit" data-translate="getInTouch">Get
+                    in Touch</h3>
+                <ul class="space-y-4 text-gray-400">
+                    <li class="flex items-start gap-4">
+                        <i class="fas fa-map-marker-alt text-blue-500 mt-1"></i>
+                        <span>DHAKA, BANGLADESH</span>
+                    </li>
+                    <li class="flex items-center gap-4">
+                        <i class="fas fa-phone-alt text-blue-500"></i>
+                        <span data-translate="call">Call: +880 1711 223 344</span>
+                    </li>
+                    <li class="flex items-center gap-4">
+                        <i class="fas fa-envelope text-blue-500"></i>
+                        <span>support@shop.com</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div
+            class="max-w-7xl mx-auto border-t border-gray-800 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <p class="text-gray-500 text-sm" data-translate="allRights">
+                &copy; 2026 e-Shop. All rights reserved.
+            </p>
+            <div class="flex flex-wrap gap-6 items-center text-gray-400">
+                <i class="fab fa-cc-visa text-4xl hover:text-white transition-colors cursor-pointer" title="Visa"></i>
+                <i class="fab fa-cc-mastercard text-4xl hover:text-white transition-colors cursor-pointer"
+                    title="Mastercard"></i>
+
+                <!-- bKash, Nagad, Rocket -->
+                <div class="px-2 py-1 bg-[#D12053] text-white rounded font-bold text-xs" title="bKash">bKash</div>
+                <div class="px-2 py-1 bg-[#ED1C24] text-white rounded font-bold text-xs" title="Nagad">Nagad</div>
+                <div class="px-2 py-1 bg-[#8C3494] text-white rounded font-bold text-xs" title="Rocket">Rocket</div>
+
+                <div class="hover:opacity-80 transition-opacity cursor-pointer p-1 rounded" title="SSLCommerz">
+                    <img src="{% static 'images/ssl_logo.png' %}" alt="SSLCommerz" class="h-8 rounded">
+                </div>
+
+                <div class="flex items-center gap-2 hover:text-white transition-colors cursor-pointer p-1 border border-gray-700 rounded bg-gray-800"
+                    title="All Bangladesh Banks Supported">
+                    <i class="fas fa-building-columns text-xl text-yellow-500"></i>
+                    <span class="text-[9px] font-bold leading-none uppercase">All Banks of<br>Bangladesh</span>
+                </div>
+
+                <div class="flex items-center gap-1 hover:text-white transition-colors cursor-pointer p-1 border border-gray-700 rounded bg-gray-800"
+                    title="Cash on Delivery">
+                    <i class="fas fa-hand-holding-dollar text-2xl text-green-500"></i>
+                    <span class="text-xs font-bold uppercase tracking-tight">COD</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Update cart count on page load
+        function updateCartCount() {
+            fetch('{% url "cart_count" %}', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.querySelectorAll('.cart-count').forEach(el => {
+                        el.textContent = data.count;
+                    });
+                })
+                .catch(error => console.log('Cart count error:', error));
+        }
+
+        // Update cart count when page loads and every 5 seconds
+        document.addEventListener('DOMContentLoaded', updateCartCount);
+        setInterval(updateCartCount, 5000);
+    </script>
+
+    <script>
+        // Django Messages with SweetAlert
+        {% if messages %}
+        {% for message in messages %}
+        Swal.fire({
+            title: '{{ message.tags|title }}',
+            text: '{{ message|escapejs }}',
+            icon: '{{ message.tags }}',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '{{ message.tags }}' === 'error' ? '#dc3545' : '#28a745'
+        });
+        {% endfor %}
+        {% endif %}
+    </script>
+
+    {% block extra_js %}{% endblock %}
+
+    <script>
+        // Language switching functionality
+        const translations = {
+            en: {
+                home: "Home",
+                tracking: "Tracking Order",
+                payment: "Payment",
+                ourProducts: "Our Products",
+                discover: "Discover our collection of premium items",
+                addToCart: "Add to Cart",
+                noProducts: "No products available",
+                adding: "Adding...",
+                login: "Sign in",
+                register: "Register",
+                cart: "Cart",
+                orders: "My Orders",
+                profile: "Visit Profile",
+                logout: "Logout",
+                contactUs: "Contact Us",
+                faq: "FAQ",
+                shippingInfo: "Shipping Information",
+                helpSupport: "Help & Support",
+                getInTouch: "Get in Touch",
+                shopTitle: "e-Shop",
+                featuredProducts: "Featured Products",
+                trackOrderFooter: "Track Order",
+                yourCartFooter: "Your Cart",
+                call: "Call: +880 1711 223 344",
+                allRights: "All rights reserved. © 2026 e-Shop."
+            },
+            bn: {
+                home: "হোম",
+                tracking: "অর্ডার ট্র্যাকিং",
+                payment: "পেমেন্ট",
+                ourProducts: "আমাদের পণ্য",
+                discover: "আমাদের প্রিমিয়াম আইটেমের সংগ্রহ আবিষ্কার করুন",
+                addToCart: "কার্টে যোগ করুন",
+                noProducts: "কোন পণ্য উপলব্ধ নেই",
+                adding: "যোগ করা হচ্ছে...",
+                login: "লগইন",
+                register: "রেজিস্টার",
+                cart: "কার্ট",
+                orders: "আমার অর্ডার",
+                profile: "প্রোফাইল দেখুন",
+                logout: "লগআউট",
+                contactUs: "যোগাযোগ করুন",
+                faq: "সচরাচর জিজ্ঞাসা",
+                shippingInfo: "শিপিং তথ্য",
+                helpSupport: "সাহায্য ও সহযোগিতা",
+                getInTouch: "যোগাযোগ",
+                shopTitle: "ই-শপ",
+                featuredProducts: "সেরা পণ্যসমূহ",
+                trackOrderFooter: "অর্ডার ট্র্যাক করুন",
+                yourCartFooter: "আপনার কার্ট",
+                call: "কল করুন: +৮৮০ ১৭১১ ২২৩ ৩৪৪",
+                allRights: "সর্বস্বত্ব সংরক্ষিত। © ২০২৬ ই-শপ।"
+            }
+        };
+
+        function switchLanguage(lang) {
+            localStorage.setItem('selectedLanguage', lang);
+            document.getElementById('currentLang').textContent = lang.toUpperCase();
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (translations[lang] && translations[lang][key]) {
+                    element.textContent = translations[lang][key];
+                }
+            });
+            document.querySelectorAll('[data-translate-btn]').forEach(button => {
+                const key = button.getAttribute('data-translate-btn');
+                if (translations[lang] && translations[lang][key]) {
+                    button.textContent = translations[lang][key];
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const savedLang = localStorage.getItem('selectedLanguage') || 'en';
+            switchLanguage(savedLang);
+        });
+    </script>
+</body>
+
+</html>

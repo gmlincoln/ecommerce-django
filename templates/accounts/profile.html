@@ -1,0 +1,207 @@
+{% extends 'base.html' %}{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">My Profile</h1>
+
+    <div class="bg-white p-6 shadow rounded mb-6">
+        <h2 class="text-xl font-bold mb-4">Profile Information</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-gray-700 mb-2">First Name</label>
+                    <input type="text" name="first_name" value="{{ user.first_name }}" class="border p-2 w-full rounded"
+                        required>
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-2">Last Name</label>
+                    <input type="text" name="last_name" value="{{ user.last_name }}" class="border p-2 w-full rounded"
+                        required>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2">Email</label>
+                <input type="email" name="email" value="{{ user.email }}" class="border p-2 w-full rounded" required>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-700 mb-2">Profile Image</label>
+                <div class="flex items-center space-x-4">
+                    {% if user.profile.profile_image %}
+                    <img src="{{ user.profile.profile_image.url }}" class="w-20 h-20 rounded-full object-cover"
+                        id="current_image">
+                    {% else %}
+                    <div class="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center" id="current_image">
+                        <span class="text-gray-500 text-2xl">{{ user.first_name|first|upper }}</span>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <input type="file" name="profile_image" id="profile_image" class="border p-2 rounded"
+                            accept="image/*">
+                        <p class="text-sm text-gray-500 mt-1">Leave empty to keep current image</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address Information -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-4">Default Address</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Full Name</label>
+                        <input type="text" name="full_name" value="{{ user.get_full_name }}"
+                            class="border p-2 w-full rounded" placeholder="Enter your full name">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Phone</label>
+                        <input type="tel" name="phone" value="{{ user.profile.phone }}"
+                            class="border p-2 w-full rounded" placeholder="01xxxxxxxxx">
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label class="block text-gray-700 mb-2">Address Line 1</label>
+                    <input type="text" name="address_line_1" value="{{ user.profile.address_line_1 }}"
+                        class="border p-2 w-full rounded" placeholder="Street address">
+                </div>
+
+                <div class="mt-4">
+                    <label class="block text-gray-700 mb-2">Address Line 2 (Optional)</label>
+                    <input type="text" name="address_line_2" value="{{ user.profile.address_line_2 }}"
+                        class="border p-2 w-full rounded" placeholder="Apartment, suite, unit, building, floor, etc.">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Division</label>
+                        <select name="state" id="division_select" class="border p-2 w-full rounded"
+                            onchange="populateDistricts()">
+                            <option value="">Select Division</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">District</label>
+                        <select name="city" id="district_select" class="border p-2 w-full rounded">
+                            <option value="">Select District</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Postal Code</label>
+                        <input type="text" name="postal_code" value="{{ user.profile.postal_code }}"
+                            class="border p-2 w-full rounded" placeholder="Postal Code">
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label class="block text-gray-700 mb-2">Country</label>
+                    <input type="text" name="country" value="{{ user.profile.country|default:'Bangladesh' }}"
+                        class="border p-2 w-full rounded" placeholder="Country">
+                </div>
+            </div>
+
+            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Update
+                Profile</button>
+        </form>
+    </div>
+
+    <div class="bg-white p-6 shadow rounded">
+        <h2 class="text-xl font-bold mb-4">Account Statistics</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-blue-600">{{ user.orders.count }}</div>
+                <div class="text-gray-600">Total Orders</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-green-600">৳ {{ total_spent }}</div>
+                <div class="text-gray-600">Total Spent</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-purple-600">{{ user.date_joined|date:"M Y" }}</div>
+                <div class="text-gray-600">Member Since</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('profile_image').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        const currentImage = document.getElementById('current_image');
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                if (currentImage.tagName === 'IMG') {
+                    currentImage.src = e.target.result;
+                } else {
+                    // Replace div with img
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'w-20 h-20 rounded-full object-cover';
+                    img.id = 'current_image';
+                    currentImage.parentNode.replaceChild(img, currentImage);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+
+<script>
+    const bdLocations = {
+        "Barisal": ["Barisal", "Barguna", "Bhola", "Jhalokati", "Patuakhali", "Pirojpur"],
+        "Chittagong": ["Chittagong", "Bandarban", "Brahmanbaria", "Chandpur", "Comilla", "Cox's Bazar", "Feni", "Khagrachari", "Lakshmipur", "Noakhali", "Rangamati"],
+        "Dhaka": ["Dhaka", "Faridpur", "Gazipur", "Gopalganj", "Kishoreganj", "Madaripur", "Manikganj", "Munshiganj", "Narayanganj", "Narsingdi", "Rajbari", "Shariatpur", "Tangail"],
+        "Khulna": ["Khulna", "Bagerhat", "Chuadanga", "Jessore", "Jhenaidah", "Kushtia", "Magura", "Meherpur", "Narail", "Satkhira"],
+        "Mymensingh": ["Mymensingh", "Jamalpur", "Netrokona", "Sherpur"],
+        "Rajshahi": ["Rajshahi", "Bogra", "Chapainawabganj", "Joypurhat", "Naogaon", "Natore", "Pabna", "Sirajganj"],
+        "Rangpur": ["Rangpur", "Dinajpur", "Gaibandha", "Kurigram", "Lalmonirhat", "Nilphamari", "Panchagarh", "Thakurgaon"],
+        "Sylhet": ["Sylhet", "Habiganj", "Moulvibazar", "Sunamganj"]
+    };
+
+    function populateDivisions() {
+        const divisionSelect = document.getElementById("division_select");
+        for (let division in bdLocations) {
+            let option = document.createElement("option");
+            option.text = division;
+            option.value = division;
+            divisionSelect.add(option);
+        }
+    }
+
+    function populateDistricts(selectedDistrict = null) {
+        const divisionSelect = document.getElementById("division_select");
+        const districtSelect = document.getElementById("district_select");
+        const selectedDivision = divisionSelect.value;
+
+        // Clear existing districts
+        districtSelect.innerHTML = '<option value="">Select District</option>';
+
+        if (selectedDivision && bdLocations[selectedDivision]) {
+            bdLocations[selectedDivision].forEach(district => {
+                let option = document.createElement("option");
+                option.text = district;
+                option.value = district;
+                districtSelect.add(option);
+            });
+        }
+
+        if (selectedDistrict) {
+            districtSelect.value = selectedDistrict;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        populateDivisions();
+
+        // Pre-select values if they exist
+        const savedDivision = "{{ user.profile.state|default:'' }}";
+        const savedDistrict = "{{ user.profile.city|default:'' }}";
+
+        if (savedDivision) {
+            const divisionSelect = document.getElementById("division_select");
+            divisionSelect.value = savedDivision;
+            populateDistricts(savedDistrict);
+        }
+    });
+</script>
+{% endblock %}

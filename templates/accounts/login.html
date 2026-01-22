@@ -1,0 +1,28 @@
+
+{% extends 'base.html' %}{% block content %}
+<div class="max-w-md mx-auto bg-white p-6 shadow rounded">
+<h1 class="text-2xl font-bold mb-4">Login</h1>
+
+<form method="post" id="loginForm">
+{% csrf_token %}
+<div class="mb-4">
+<label class="block text-gray-700">Username</label>
+<input name="username" id="username" class="border p-2 w-full" required>
+</div>
+<div class="mb-4">
+<label class="block text-gray-700">Password</label>
+<input type="password" name="password" id="password" class="border p-2 w-full" required>
+</div>
+<button type="submit" class="bg-blue-600 text-white px-4 py-2 w-full" id="loginBtn">Login</button>
+</form>
+<p class="mt-4 text-center">Don't have an account? <a href="/accounts/register/" class="text-blue-600">Register</a></p>
+</div>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    const btn = document.getElementById('loginBtn');
+    btn.textContent = 'Logging in...';
+    btn.disabled = true;
+});
+</script>
+{% endblock %}

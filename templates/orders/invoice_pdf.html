@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 1.5cm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .header-table {
+            width: 100%;
+            border-bottom: 2px solid #3b82f6;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+        }
+
+        .shop-logo {
+            height: 60px;
+            width: auto;
+        }
+
+        .invoice-title-cell {
+            text-align: right;
+            vertical-align: bottom;
+        }
+
+        .invoice-label {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #1e3a8a;
+            text-transform: uppercase;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .items-table th {
+            background-color: #f3f4f6;
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .items-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-size: 10pt;
+        }
+
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 8pt;
+            color: #777;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <table class="header-table">
+        <tr>
+            <td width="50%">
+                {% if logo_path %}
+                <img src="{{ logo_path }}" alt="Logo" class="shop-logo">
+                {% endif %}
+                <div style="font-size: 16pt; font-weight: bold; color: #1e3a8a; margin-top: 5px;">e-Shop</div>
+            </td>
+            <td width="50%" class="invoice-title-cell">
+                <div class="invoice-label">Tax Invoice / Receipt</div>
+            </td>
+        </tr>
+    </table>
+
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 30px;">
+        <tr>
+            <td width="50%" valign="top">
+                <span style="font-weight: bold; color: #1e3a8a;">Sold To:</span><br>
+                <strong>{{ order.full_name }}</strong><br>
+                {{ order.address_line_1 }}<br>
+                {% if order.address_line_2 %}{{ order.address_line_2 }}<br>{% endif %}
+                {{ order.city }}, {{ order.state }}, {{ order.postal_code }}<br>
+                {{ order.country }}<br>
+                Phone: {{ order.phone }}<br>
+                Email: {{ order.email }}
+            </td>
+            <td width="50%" valign="top" align="right">
+                <span style="font-weight: bold; color: #1e3a8a;">Invoice Details:</span><br>
+                Order Number: <strong>#{{ order.order_number }}</strong><br>
+                Order Date: {{ order.created_at|date:"M d, Y" }}<br>
+                Order Status: {{ order.get_status_display }}<br>
+                Payment Method: {{ order.payment_method|upper }}<br>
+                {% if order.transaction_id %}
+                Transaction ID: {{ order.transaction_id }}
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <table width="100%" border="1" cellspacing="0" cellpadding="8"
+        style="border-collapse: collapse; margin-bottom: 30px;">
+        <thead>
+            <tr style="background-color: #f3f4f6;">
+                <th width="50%" align="left">Product Description</th>
+                <th width="15%" align="right">Price</th>
+                <th width="15%" align="right">Qty</th>
+                <th width="20%" align="right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td align="right">{{ item.formatted_price }}</td>
+                <td align="right">{{ item.quantity }}</td>
+                <td align="right">{{ item.formatted_total }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+            <td width="60%"></td>
+            <td width="40%">
+                <table width="100%" border="0" cellspacing="0" cellpadding="4">
+                    <tr>
+                        <td>Subtotal:</td>
+                        <td align="right">{{ subtotal }}</td>
+                    </tr>
+                    <tr>
+                        <td>Shipping:</td>
+                        <td align="right">{{ shipping }}</td>
+                    </tr>
+                    <tr style="color: #1e3a8a; font-size: 14pt;">
+                        <td style="border-top: 2px solid #1e3a8a; padding-top: 10px;"><strong>Grand Total:</strong></td>
+                        <td style="border-top: 2px solid #1e3a8a; padding-top: 10px;" align="right">
+                            <strong> {{ total }} </strong>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        <p>Thank you for shopping with e-Shop!</p>
+        <p>This is a computer-generated invoice and does not require a signature.</p>
+        <p>For any queries, please contact support at +880 1711 223 344 or email support@eshop.com</p>
+    </div>
+</body>
+
+</html>

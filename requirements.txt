@@ -1,0 +1,7 @@
+
+pillow
+django==4.2.10
+python-decouple
+requests
+sslcommerz-lib
+xhtml2pdf
