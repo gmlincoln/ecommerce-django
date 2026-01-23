@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
 from django.urls import reverse
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -46,7 +47,11 @@ class Campaign(models.Model):
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
-    discount_percent = models.IntegerField(default=10, help_text="Discount percentage for campaign products (0-100)")
+    discount_percent = models.IntegerField(
+        default=10, 
+        help_text="Discount percentage for campaign products (0-100)",
+        validators=[MinValueValidator(0), MaxValueValidator(100)]
+    )
     
     # Products associated with this campaign
     products = models.ManyToManyField(Product, related_name='campaigns')
@@ -79,3 +84,14 @@ class Campaign(models.Model):
         if self.start_time is None:
             return False
         return timezone.now() < self.start_time
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.discount_percent < 0:
+            raise ValidationError({'discount_percent': 'Discount percentage cannot be negative. Only positive values (0-100) are allowed.'})
+        if self.discount_percent > 100:
+            raise ValidationError({'discount_percent': 'Discount percentage cannot exceed 100%.'})
+    
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)

@@ -210,6 +210,11 @@ def payment_success(request):
                         order.status = 'completed'
                         order.transaction_id = tran_id
                         order.save()
+                        
+                        # Automatically log in the user to preserve session after SSLCommerz redirect
+                        if not request.user.is_authenticated:
+                            from django.contrib.auth import login
+                            login(request, order.user)
                             
                         messages.success(request, 'Payment successful! Your order has been confirmed.')
                         return render(request, 'orders/success.html', {'order': order})
@@ -224,18 +229,45 @@ def payment_success(request):
             messages.error(request, 'Payment validation error.')
             return render(request, 'orders/fail.html')
     
+    # Fallback: Try to get order from tran_id in GET/POST params if val_id is not available
+    tran_id = request.POST.get('tran_id') or request.GET.get('tran_id')
+    if tran_id:
+        try:
+            order_id = tran_id.split('_')[1]
+            order = Order.objects.get(id=order_id)
+            
+            # Automatically log in the user to preserve session after SSLCommerz redirect
+            if not request.user.is_authenticated:
+                from django.contrib.auth import login
+                login(request, order.user)
+            
+            order.status = 'completed'
+            order.transaction_id = tran_id
+            order.save()
+            
+            messages.success(request, 'Payment successful! Your order has been confirmed.')
+            return render(request, 'orders/success.html', {'order': order})
+        except (Order.DoesNotExist, IndexError, ValueError):
+            pass
+    
     messages.error(request, 'Invalid payment response.')
     return render(request, 'orders/fail.html')
 
 @csrf_exempt
 def payment_fail(request):
     """Handle failed payment from SSL Commerce"""
-    transaction_id = request.GET.get('tran_id')
+    transaction_id = request.GET.get('tran_id') or request.POST.get('tran_id')
     order_id = transaction_id.split('_')[1] if transaction_id else None
     
     if order_id:
         try:
             order = Order.objects.get(id=order_id)
+            
+            # Automatically log in the user to preserve session after SSLCommerz redirect
+            if not request.user.is_authenticated:
+                from django.contrib.auth import login
+                login(request, order.user)
+            
             # Check for expiration if payment failed
             order.check_and_cancel_if_expired()
             if order.status != 'cancelled':
@@ -255,12 +287,18 @@ def payment_fail(request):
 @csrf_exempt
 def payment_cancel(request):
     """Handle cancelled payment from SSL Commerce"""
-    transaction_id = request.GET.get('tran_id')
+    transaction_id = request.GET.get('tran_id') or request.POST.get('tran_id')
     order_id = transaction_id.split('_')[1] if transaction_id else None
     
     if order_id:
         try:
             order = Order.objects.get(id=order_id)
+            
+            # Automatically log in the user to preserve session after SSLCommerz redirect
+            if not request.user.is_authenticated:
+                from django.contrib.auth import login
+                login(request, order.user)
+            
             order.status = 'cancelled'
             order.save()
             messages.warning(request, 'Payment cancelled.')
