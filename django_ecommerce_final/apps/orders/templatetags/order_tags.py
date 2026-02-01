@@ -8,11 +8,13 @@ register = template.Library()
 def get_payable_count(user):
     if user.is_authenticated:
         now = timezone.now()
+        from django.db.models import Q
         count = Order.objects.filter(
             user=user,
-            status='pending',
             payment_method='sslcommerz',
             payment_timeout__gt=now
+        ).filter(
+            Q(status='pending') | Q(status='failed')
         ).count()
         return count
     return 0

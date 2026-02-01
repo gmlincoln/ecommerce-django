@@ -1,0 +1,71 @@
+{% extends 'custom_admin/base_admin.html' %}
+{% block title %}Support Chat{% endblock %}
+{% block page_title %}Customer Support Chat{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden min-h-[600px] flex">
+        <!-- Sidebar: User List -->
+        <div class="w-1/3 border-r border-gray-100 dark:border-gray-700">
+            <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                <h3 class="font-black text-gray-900 dark:text-white uppercase tracking-widest text-sm">Conversations
+                </h3>
+            </div>
+            <div class="overflow-y-auto h-[530px]">
+                {% for item in user_list %}
+                <a href="{% url 'chat:admin_chat_detail' item.user.id %}"
+                    class="block p-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center justify-between border-b border-gray-50 dark:border-gray-700">
+                    <div class="flex items-center gap-4">
+                        <div
+                            class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center font-bold text-blue-600 dark:text-blue-400">
+                            {{ item.user.username|first|upper }}
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-900 dark:text-white">
+                                {{ item.user.profile.full_name|default:item.user.username }}
+                            </p>
+                            <p class="text-[10px] text-gray-400 font-medium -mt-1 mb-1">@{{ item.user.username }}</p>
+                            <p class="text-xs text-gray-500 truncate w-40">
+                                {% if item.last_message %}
+                                {% if item.last_message.sender.is_staff %}<span
+                                    class="text-blue-500 font-bold">You:</span> {% endif %}
+                                {% if item.last_message.image and not item.last_message.message %}
+                                <i class="fas fa-image text-[10px]"></i> Sent an image
+                                {% else %}
+                                {{ item.last_message.message }}
+                                {% endif %}
+                                {% else %}
+                                No messages yet
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    {% if item.unread_count > 0 %}
+                    <span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-full">{{
+                        item.unread_count }}</span>
+                    {% endif %}
+                </a>
+                {% empty %}
+                <div class="p-8 text-center mt-20">
+                    <i class="fas fa-comments text-gray-200 text-5xl mb-4"></i>
+                    <p class="text-gray-400">No active support chats</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Chat Area Placeholder -->
+        <div class="flex-1 flex flex-col items-center justify-center bg-gray-50/50 dark:bg-gray-900/50">
+            <div class="text-center">
+                <div
+                    class="w-24 h-24 bg-white dark:bg-gray-800 rounded-3xl shadow-xl flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-headset text-4xl text-blue-600"></i>
+                </div>
+                <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-2">Select a Conversation</h2>
+                <p class="text-gray-500 max-w-xs mx-auto">Choose a user from the left to start responding to their
+                    support requests.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

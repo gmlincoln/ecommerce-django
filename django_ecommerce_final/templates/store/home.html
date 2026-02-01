@@ -125,8 +125,7 @@
                     <a
                         href="{% if p.slug %}{% url 'product_detail' p.slug %}{% else %}{% url 'product_detail_id' p.id %}{% endif %}">
                         {% if p.image %}
-                        <img src="{{p.image.url}}"
-                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        <img src="{{p.image.url}}" class="w-full h-full object-cover  transition-transform duration-700"
                             loading="lazy" alt="{{ p.name }}">
                         {% else %}
                         <div class="w-full h-full flex items-center justify-center text-gray-300">
@@ -144,6 +143,15 @@
                     class="absolute top-4 left-4 bg-yellow-400 text-gray-900 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
                     Hot Item</div>
                 {% endif %}
+
+                {% with campaign=p.get_active_campaign %}
+                {% if campaign %}
+                <div
+                    class="absolute top-4 right-4 bg-green-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg transform rotate-3 z-10 animate-pulse">
+                    {{ campaign.discount_percentage }}% OFF
+                </div>
+                {% endif %}
+                {% endwith %}
 
                 <!-- Quick View Overlay -->
                 <div
@@ -164,7 +172,16 @@
                 </a>
 
                 <div class="flex items-center justify-between mt-4">
+                    {% with campaign=p.get_active_campaign %}
+                    {% if campaign %}
+                    <div class="flex flex-col">
+                        <p class="text-blue-600 text-2xl font-black leading-none">৳ {{p.get_display_price}}</p>
+                        <p class="text-gray-400 text-sm line-through mt-1">৳ {{p.price}}</p>
+                    </div>
+                    {% else %}
                     <p class="text-blue-600 text-2xl font-black">৳ {{p.price}}</p>
+                    {% endif %}
+                    {% endwith %}
                     <div class="flex text-yellow-400 text-xs gap-1">
                         <i class="fas fa-star"></i>
                         <i class="fas fa-star"></i>
@@ -175,11 +192,18 @@
                 </div>
 
                 <div class="mt-6 pt-6 border-t border-gray-50">
+                    {% if p.is_in_stock %}
                     <a href="{% url 'add_to_cart' p.id %}"
                         class="w-full bg-gray-900 text-white px-6 py-3 rounded-xl block text-center font-bold hover:bg-blue-600 transition-all duration-300 transform active:scale-95 add-to-cart-btn shadow-lg"
                         data-product-id="{{p.id}}">
                         <i class="fas fa-shopping-bag mr-2"></i><span data-translate-btn="addToCart">Add to Cart</span>
                     </a>
+                    {% else %}
+                    <button disabled
+                        class="w-full bg-gray-400 text-white px-6 py-3 rounded-xl block text-center font-bold cursor-not-allowed shadow-lg">
+                        <i class="fas fa-ban mr-2"></i><span>Out of Stock</span>
+                    </button>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -215,7 +239,7 @@
                 updateDisplay(dist);
                 statusEl.innerHTML = `
                     <p class="text-white/80 font-bold flex items-center gap-2">
-                        <i class="fas fa-clock text-yellow-500"></i> Coming Soon!
+                        <i class="fas fa-clock text-yellow-500"></i> Starting soon! Browse products early.
                     </p>
                 `;
                 // Removed opacity logic to keep products clear
@@ -227,14 +251,12 @@
                 // Running
                 const dist = endTime - now;
                 updateDisplay(dist);
-                {% if campaign and campaign.id %}
+                {% if campaign %}
                 statusEl.innerHTML = `
                     <a href="{% url 'campaign_detail' campaign.id %}" class="bg-white text-gray-900 px-8 py-3 rounded-full font-black hover:bg-yellow-400 transition-all flex items-center gap-3 shadow-xl inline-flex decoration-none">
                         SHOP THE SALE NOW <i class="fas fa-arrow-right"></i>
                     </a>
                 `;
-                {% else %}
-                statusEl.innerHTML = '<p class="text-white font-black">Sale in Progress</p>';
                 {% endif %}
                 // Removed opacity logic to keep products clear
             }

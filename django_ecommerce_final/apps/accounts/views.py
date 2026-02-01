@@ -35,7 +35,13 @@ def register(request):
    return render(request,'accounts/register.html')
   
   user = User.objects.create_user(username=username, password=password, email=email, first_name=first_name, last_name=last_name)
-  Profile.objects.get_or_create(user=user, defaults={'profile_image': profile_image})
+  
+  # A signal might have already created a profile, so we use get_or_create or update the existing one
+  profile, created = Profile.objects.get_or_create(user=user)
+  if profile_image:
+      profile.profile_image = profile_image
+      profile.save()
+      
   messages.success(request, 'Registration successful! Please login.')
   return redirect('login')
  return render(request,'accounts/register.html')

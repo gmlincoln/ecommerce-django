@@ -71,6 +71,16 @@
 
             <!-- Right Icons -->
             <div class="flex items-center gap-8">
+                <!-- Wishlist -->
+                {% if user.is_authenticated %}
+                <a href="{% url 'wishlist' %}" class="relative text-gray-700 hover:text-blue-600 text-2xl"
+                    title="{% trans 'Wishlist' %}">
+                    <i class="fas fa-heart"></i>
+                    <span
+                        class="absolute -top-2 -right-2 bg-pink-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold wishlist-count">0</span>
+                </a>
+                {% endif %}
+
                 <!-- Cart -->
                 <a href="{% url 'cart' %}" class="relative text-gray-700 hover:text-blue-600 text-2xl"
                     title="{% trans 'Shopping Cart' %}">
@@ -92,11 +102,20 @@
                             </p>
                             <p class="text-sm text-gray-500">{{user.email}}</p>
                         </div>
+                        {% if user.is_staff %}
+                        <a href="{% url 'custom_admin:dashboard' %}"
+                            class="block px-4 py-3 text-blue-600 hover:bg-gray-100 font-semibold border-b">
+                            <i class="fas fa-user-shield mr-2"></i>{% trans "Admin Panel" %}
+                        </a>
+                        {% endif %}
                         <a href="{% url 'profile' %}" class="block px-4 py-3 text-gray-700 hover:bg-gray-100">
                             <i class="fas fa-user-circle mr-2"></i>{% trans "Visit Profile" %}
                         </a>
                         <a href="{% url 'orders' %}" class="block px-4 py-3 text-gray-700 hover:bg-gray-100">
                             <i class="fas fa-box mr-2"></i>{% trans "My Orders" %}
+                        </a>
+                        <a href="{% url 'wishlist' %}" class="block px-4 py-3 text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-heart mr-2"></i>{% trans "My Wishlist" %}
                         </a>
                         <a href="{% url 'logout' %}" class="block px-4 py-3 text-red-600 hover:bg-gray-100 border-t">
                             <i class="fas fa-sign-out-alt mr-2"></i>{% trans "Logout" %}
@@ -172,7 +191,8 @@
                             data-translate="contactUs"><i class="fas fa-chevron-right text-xs"></i> Contact Us</a></li>
                     <li><a href="#" class="hover:text-blue-400 transition-colors flex items-center gap-2"
                             data-translate="faq"><i class="fas fa-chevron-right text-xs"></i> FAQ</a></li>
-                    <li><a href="{% url 'order_tracking' %}" class="hover:text-blue-400 transition-colors flex items-center gap-2"
+                    <li><a href="{% url 'order_tracking' %}"
+                            class="hover:text-blue-400 transition-colors flex items-center gap-2"
                             data-translate="shippingInfo"><i class="fas fa-chevron-right text-xs"></i> Shipping
                             Information</a></li>
                 </ul>
@@ -250,9 +270,39 @@
                 .catch(error => console.log('Cart count error:', error));
         }
 
-        // Update cart count when page loads and every 5 seconds
-        document.addEventListener('DOMContentLoaded', updateCartCount);
-        setInterval(updateCartCount, 5000);
+        // Update wishlist count on page load
+        function updateWishlistCount() {
+            {% if user.is_authenticated %}
+            fetch('{% url "wishlist_count" %}', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.querySelectorAll('.wishlist-count').forEach(el => {
+                        el.textContent = data.count;
+                        // Hide badge if count is 0
+                        if (data.count === 0) {
+                            el.style.display = 'none';
+                        } else {
+                            el.style.display = 'flex';
+                        }
+                    });
+                })
+                .catch(error => console.log('Wishlist count error:', error));
+            {% endif %}
+        }
+
+        // Update counts when page loads and every 5 seconds
+        document.addEventListener('DOMContentLoaded', function () {
+            updateCartCount();
+            updateWishlistCount();
+        });
+        setInterval(function () {
+            updateCartCount();
+            updateWishlistCount();
+        }, 5000);
     </script>
 
     <script>

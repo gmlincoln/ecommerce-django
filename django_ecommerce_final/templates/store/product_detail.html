@@ -57,7 +57,22 @@
             <h1 class="text-4xl md:text-5xl font-black text-gray-900 mb-6 leading-tight">{{ product.name }}</h1>
 
             <div class="flex items-center gap-6 mb-8 pb-8 border-b border-gray-100">
+                {% with campaign=product.get_active_campaign %}
+                {% if campaign %}
+                <div class="flex flex-col">
+                    <div class="text-4xl font-black text-blue-600">৳ {{ product.get_display_price }}</div>
+                    <div class="flex items-center gap-3 mt-1">
+                        <span class="text-lg text-gray-400 line-through">৳ {{ product.price }}</span>
+                        <span
+                            class="bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm animate-pulse">
+                            {{ campaign.discount_percentage }}% OFF
+                        </span>
+                    </div>
+                </div>
+                {% else %}
                 <div class="text-4xl font-black text-blue-600">৳ {{ product.price }}</div>
+                {% endif %}
+                {% endwith %}
                 <div class="flex items-center gap-2">
                     <div class="flex text-yellow-400">
                         <i class="fas fa-star"></i>
@@ -103,87 +118,180 @@
 
             <!-- Add to Cart Action -->
             <div class="mt-auto space-y-6">
-                <div class="flex items-center gap-4">
-                    <div class="flex items-center border border-gray-200 rounded-2xl p-1 bg-white shadow-sm">
-                        <button
-                            class="w-12 h-12 flex items-center justify-center text-gray-500 hover:text-blue-600 transition-colors"
-                            onclick="updateQty(-1)"><i class="fas fa-minus"></i></button>
-                        <input type="number" id="detailQty" value="1" min="1"
-                            class="w-12 text-center border-none focus:ring-0 font-black text-lg p-0" readonly>
-                        <button
-                            class="w-12 h-12 flex items-center justify-center text-gray-500 hover:text-blue-600 transition-colors"
-                            onclick="updateQty(1)"><i class="fas fa-plus"></i></button>
+                <!-- Stock Status Badge -->
+                {% if product.stock <= 0 %} <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+                        <div>
+                            <p class="font-bold text-red-800">Out of Stock</p>
+                            <p class="text-sm text-red-600">This product is currently unavailable</p>
+                        </div>
                     </div>
-
-                    <a id="addToCartMain" href="{% url 'add_to_cart' product.id %}"
-                        class="flex-grow bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-4 hover:shadow-2xl hover:bg-blue-700 transition-all duration-300 transform active:scale-95 shadow-lg group">
-                        <i class="fas fa-shopping-bag group-hover:rotate-12 transition-transform"></i>
-                        <span>Add to Cart</span>
-                    </a>
-                </div>
-
-                <div class="flex items-center gap-6 text-sm font-bold text-gray-400">
-                    <button class="flex items-center gap-2 hover:text-red-500 transition-colors"><i
-                            class="far fa-heart"></i> Add to Wishlist</button>
-                    <button class="flex items-center gap-2 hover:text-blue-600 transition-colors"><i
-                            class="fas fa-share-nodes"></i> Share</button>
-                    <div class="flex-grow"></div>
-                    <div class="flex items-center gap-2">
-                        <span
-                            class="w-2 h-2 rounded-full {% if product.stock > 0 %}bg-green-500{% else %}bg-red-500{% endif %}"></span>
-                        <span class="{% if product.stock > 0 %}text-green-600{% else %}text-red-600{% endif %}">
-                            {% if product.stock > 0 %}In Stock ({{ product.stock }}){% else %}Out of Stock{% endif %}
-                        </span>
+            </div>
+            {% elif product.stock <= 5 %} <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                    <div>
+                        <p class="font-bold text-yellow-800">Limited Stock</p>
+                        <p class="text-sm text-yellow-700">Only {{ product.stock }} items left!</p>
                     </div>
                 </div>
+        </div>
+        {% endif %}
+
+        <div class="flex items-center gap-4">
+            {% if product.is_in_stock %}
+            <div class="flex items-center border border-gray-200 rounded-2xl p-1 bg-white shadow-sm">
+                <button
+                    class="w-12 h-12 flex items-center justify-center text-gray-500 hover:text-blue-600 transition-colors"
+                    onclick="updateQty(-1)"><i class="fas fa-minus"></i></button>
+                <input type="number" id="detailQty" value="1" min="1" max="{{ product.stock }}"
+                    class="w-12 text-center border-none focus:ring-0 font-black text-lg p-0" readonly>
+                <button
+                    class="w-12 h-12 flex items-center justify-center text-gray-500 hover:text-blue-600 transition-colors"
+                    onclick="updateQty(1)"><i class="fas fa-plus"></i></button>
+            </div>
+
+            <a id="addToCartMain" href="{% url 'add_to_cart' product.id %}"
+                class="flex-grow bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-4 hover:shadow-2xl hover:bg-blue-700 transition-all duration-300 transform active:scale-95 shadow-lg group">
+                <i class="fas fa-shopping-bag group-hover:rotate-12 transition-transform"></i>
+                <span>Add to Cart</span>
+            </a>
+            {% else %}
+            <!-- Out of Stock - Show Wishlist and Notify Me buttons -->
+            <div class="space-y-3">
+                <button disabled
+                    class="w-full bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-4 cursor-not-allowed shadow-lg">
+                    <i class="fas fa-ban"></i>
+                    <span>Out of Stock</span>
+                </button>
+
+                {% if user.is_authenticated %}
+                <!-- Add to Wishlist Button -->
+                {% if not in_wishlist %}
+                <a href="{% url 'add_to_wishlist' product.id %}"
+                    class="w-full bg-pink-500 hover:bg-pink-600 text-white px-8 py-3 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-300 shadow-md">
+                    <i class="far fa-heart"></i>
+                    <span>Add to Wishlist</span>
+                </a>
+                {% else %}
+                <a href="{% url 'wishlist' %}"
+                    class="w-full bg-pink-600 text-white px-8 py-3 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-300 shadow-md">
+                    <i class="fas fa-heart"></i>
+                    <span>In Wishlist - View All</span>
+                </a>
+                {% endif %}
+
+                <!-- Restock Notification Button -->
+                {% if not restock_subscribed %}
+                <a href="{% url 'subscribe_restock' product.id %}"
+                    class="w-full bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-300 shadow-md">
+                    <i class="fas fa-bell"></i>
+                    <span>Notify Me When Available</span>
+                </a>
+                {% else %}
+                <div
+                    class="w-full bg-green-50 border-2 border-green-500 text-green-700 px-8 py-3 rounded-2xl font-bold text-base flex items-center justify-center gap-3">
+                    <i class="fas fa-check-circle"></i>
+                    <span>You'll be notified when restocked!</span>
+                </div>
+                {% endif %}
+                {% else %}
+                <a href="{% url 'login' %}?next={{ request.path }}"
+                    class="w-full bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-300 shadow-md">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Login to Get Notified</span>
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="flex items-center gap-6 text-sm font-bold text-gray-400">
+            {% if user.is_authenticated %}
+            {% if product.is_in_stock %}
+            <!-- Wishlist toggle for in-stock products -->
+            {% if not in_wishlist %}
+            <a href="{% url 'add_to_wishlist' product.id %}"
+                class="flex items-center gap-2 hover:text-pink-500 transition-colors">
+                <i class="far fa-heart"></i> Add to Wishlist
+            </a>
+            {% else %}
+            <a href="{% url 'wishlist' %}"
+                class="flex items-center gap-2 text-pink-500 hover:text-pink-600 transition-colors">
+                <i class="fas fa-heart"></i> In Wishlist
+            </a>
+            {% endif %}
+            {% endif %}
+            {% endif %}
+            <button class="flex items-center gap-2 hover:text-blue-600 transition-colors"><i
+                    class="fas fa-share-nodes"></i> Share</button>
+            <div class="flex-grow"></div>
+            <div class="flex items-center gap-2">
+                <span
+                    class="w-2 h-2 rounded-full {% if product.stock > 0 %}bg-green-500{% else %}bg-red-500{% endif %}"></span>
+                <span class="{% if product.stock > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                    {% if product.stock > 0 %}In Stock ({{ product.stock }}){% else %}Out of Stock{% endif %}
+                </span>
             </div>
         </div>
     </div>
+</div>
+</div>
 
-    <!-- Related Products Section -->
-    {% if related_products %}
-    <div class="mt-24">
-        <div class="flex items-center justify-between mb-12">
-            <h2 class="text-3xl font-black text-gray-900 uppercase tracking-tight">You May Also Like</h2>
-            <div class="h-1 bg-blue-600 w-24"></div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {% for rp in related_products %}
-            <div
-                class="bg-white rounded-2xl border border-gray-100 p-4 transition-all duration-500 hover:shadow-2xl group">
-                <div class="aspect-square rounded-xl overflow-hidden bg-gray-50 mb-6 relative">
-                    {% if rp.image %}
-                    <img src="{{ rp.image.url }}"
-                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                    {% endif %}
-                    <div
-                        class="absolute inset-0 bg-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <a href="{% if rp.slug %}{% url 'product_detail' rp.slug %}{% else %}{% url 'product_detail_id' rp.id %}{% endif %}"
-                            class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-xl scale-0 group-hover:scale-100 transition-transform duration-500"><i
-                                class="fas fa-expand"></i></a>
-                    </div>
-                </div>
-                <h4 class="font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-2 truncate">
-                    {{ rp.name }}</h4>
-                <p class="text-blue-600 font-black">৳ {{ rp.price }}</p>
-            </div>
-            {% endfor %}
-        </div>
+<!-- Related Products Section -->
+{% if related_products %}
+<div class="mt-24">
+    <div class="flex items-center justify-between mb-12">
+        <h2 class="text-3xl font-black text-gray-900 uppercase tracking-tight">You May Also Like</h2>
+        <div class="h-1 bg-blue-600 w-24"></div>
     </div>
-    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {% for rp in related_products %}
+        <div class="bg-white rounded-2xl border border-gray-100 p-4 transition-all duration-500 hover:shadow-2xl group">
+            <div class="aspect-square rounded-xl overflow-hidden bg-gray-50 mb-6 relative">
+                {% if rp.image %}
+                <img src="{{ rp.image.url }}"
+                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                {% endif %}
+                <div
+                    class="absolute inset-0 bg-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <a href="{% if rp.slug %}{% url 'product_detail' rp.slug %}{% else %}{% url 'product_detail_id' rp.id %}{% endif %}"
+                        class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-xl scale-0 group-hover:scale-100 transition-transform duration-500"><i
+                            class="fas fa-expand"></i></a>
+                </div>
+            </div>
+            <h4 class="font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-2 truncate">
+                {{ rp.name }}</h4>
+            {% with campaign=rp.get_active_campaign %}
+            {% if campaign %}
+            <div class="flex items-center gap-2">
+                <p class="text-blue-600 font-black">৳ {{ rp.get_display_price }}</p>
+                <p class="text-gray-400 text-xs line-through">৳ {{ rp.price }}</p>
+                <span class="bg-green-100 text-green-600 text-[8px] font-bold px-1.5 py-0.5 rounded">
+                    -{{ campaign.discount_percentage }}%
+                </span>
+            </div>
+            {% else %}
+            <p class="text-blue-600 font-black">৳ {{ rp.price }}</p>
+            {% endif %}
+            {% endwith %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 </div>
 
 <script>
     function updateQty(delta) {
         const input = document.getElementById('detailQty');
+        const maxStock = parseInt(input.getAttribute('max')) || 999;
         let val = parseInt(input.value) + delta;
         if (val < 1) val = 1;
+        if (val > maxStock) val = maxStock;
         input.value = val;
-
-        // Update URL of add to cart button to handle quantity if needed 
-        // (Currently our add_to_cart view doesn't take qty as path param, 
-        // will need to update cart view logic if we want to pass initial qty)
     }
 
     // Since our current add_to_cart view only adds 1 item per click,

@@ -1,0 +1,381 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Panel{% endblock %} - E-Commerce</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Dark mode variables */
+        :root {
+            --sidebar-width: 280px;
+            --primary-blue: #2563eb;
+            /* Matches blue-600 from front-end */
+            --sidebar-bg: #1f2937;
+            /* Matches gray-800 from front-end top bar */
+        }
+
+        .dark {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            transition: all 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            transition: all 0.3s ease;
+        }
+
+        .main-content.expanded {
+            margin-left: 80px;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* Card hover effect */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="h-full bg-gray-50 dark:bg-gray-900">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar fixed top-0 left-0 h-full bg-gray-800 text-white shadow-2xl z-50">
+        <div class="flex flex-col h-full">
+            <!-- Logo -->
+            <div class="p-6 border-b border-gray-700">
+                <div class="flex items-center justify-between">
+                    <a href="{% url 'home' %}" class="flex items-center space-x-3 group">
+                        <img src="{% static 'images/icon.gif' %}" alt="Logo" class="h-8 w-8 object-contain">
+                        <span id="logo-text" class="text-xl font-black tracking-tighter nav-text">
+                            {{ site_settings.site_name|default:"e-Shop" }}</span>
+                    </a>
+                    <button id="sidebar-toggle" class="text-white hover:text-blue-300 transition-all active:scale-95">
+                        <i class="fas fa-bars-staggered text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 overflow-y-auto py-6 px-3">
+                <ul class="space-y-2">
+                    <li>
+                        <a href="{% url 'custom_admin:dashboard' %}"
+                            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.url_name == 'dashboard' %}bg-blue-600 text-white{% endif %}">
+                            <i class="fas fa-chart-line text-lg w-6"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+
+                    <!-- Products Section -->
+                    <li class="pt-4">
+                        <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                            <span class="nav-text">Products</span>
+                        </div>
+                    </li>
+                    <li>
+                        <a href="{% url 'custom_admin:product_list' %}"
+                            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-700 transition {% if 'product' in request.resolver_match.url_name %}bg-blue-600 text-white{% endif %}">
+                            <i class="fas fa-box text-lg w-6"></i>
+                            <span class="nav-text">Products</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'custom_admin:category_list' %}"
+                            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-700 transition {% if 'category' in request.resolver_match.url_name %}bg-blue-600 text-white{% endif %}">
+                            <i class="fas fa-tags text-lg w-6"></i>
+                            <span class="nav-text">Categories</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'custom_admin:campaign_list' %}"
+                            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-700 transition {% if 'campaign' in request.resolver_match.url_name %}bg-blue-600 text-white{% endif %}">
+                            <i class="fas fa-bullhorn text-lg w-6"></i>
+                            <span class="nav-text">Campaigns</span>
+                        </a>
+                    </li>
+
+                    <!-- Orders Section -->
+                    <li class="pt-4">
+                        <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                            <span class="nav-text">Sales</span>
+                        </div>
+                    </li>
+                    <li>
+                        <a href="{% url 'custom_admin:order_list' %}"
+                            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-700 transition {% if 'order' in request.resolver_match.url_name %}bg-blue-600 text-white{% endif %}">
+                            <i class="fas fa-shopping-cart text-lg w-6"></i>
+                            <span class="nav-text">Orders</span>
+                        </a>
+                    </li>
+
+                    <!-- Users Section -->
+                    <li class="pt-4">
+                        <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                            <span class="nav-text">Users</span>
+                        </div>
+                    </li>
+                    <li>
+                        <a href="{% url 'custom_admin:user_list' %}"
+                            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-700 transition {% if 'user' in request.resolver_match.url_name %}bg-blue-600 text-white{% endif %}">
+                            <i class="fas fa-users text-lg w-6"></i>
+                            <span class="nav-text">Customers</span>
+                        </a>
+                    </li>
+                    </li>
+
+                    <!-- Analytics Section -->
+                    <li class="pt-4">
+                        <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                            <span class="nav-text">Reports</span>
+                        </div>
+                    </li>
+                    <li>
+                        <a href="{% url 'custom_admin:analytics' %}"
+                            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-700 transition {% if 'analytics' in request.resolver_match.url_name %}bg-blue-600 text-white{% endif %}">
+                            <i class="fas fa-chart-bar text-lg w-6"></i>
+                            <span class="nav-text">Analytics</span>
+                        </a>
+                    </li>
+                    <li class="pt-4">
+                        <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                            <span class="nav-text">System</span>
+                        </div>
+                    </li>
+                    <li>
+                        <a href="{% url 'custom_admin:site_settings' %}"
+                            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-700 transition {% if 'settings' in request.resolver_match.url_name %}bg-blue-600 text-white{% endif %}">
+                            <i class="fas fa-cog text-lg w-6"></i>
+                            <span class="nav-text">Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- User Profile -->
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center space-x-3 p-2 rounded-xl bg-gray-900/50">
+                    <div
+                        class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center border-2 border-white/10">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="flex-1 nav-text overflow-hidden">
+                        <p class="font-bold text-sm truncate">{{ request.user.username }}</p>
+                        <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest">Administrator</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div id="main-content" class="main-content min-h-screen">
+        <!-- Top Header -->
+        <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
+            <div class="flex items-center justify-between px-6 py-4">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-gray-800 dark:text-white">
+                        {% block page_title %}Dashboard{% endblock %}
+                    </h1>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <!-- Dark Mode Toggle -->
+                    <button id="dark-mode-toggle"
+                        class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                        <i class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
+                    </button>
+
+
+
+                    <!-- Notifications -->
+                    <div class="relative group">
+                        <button class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition relative">
+                            <i class="fas fa-bell text-gray-600 dark:text-gray-300"></i>
+                            {% if unread_notifications_count > 0 %}
+                            <span
+                                class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] h-5 flex items-center justify-center animate-pulse">
+                                {{ unread_notifications_count }}
+                            </span>
+                            {% endif %}
+                        </button>
+
+                        <!-- Notifications Dropdown -->
+                        <div
+                            class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-2xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-gray-100 dark:border-gray-700">
+                            <div class="p-4 border-b dark:border-gray-700 flex items-center justify-between">
+                                <h3 class="font-bold text-gray-800 dark:text-white">Notifications</h3>
+                                <a href="{% url 'custom_admin:mark_all_read' %}"
+                                    class="text-xs text-blue-600 hover:underline">Mark all read</a>
+                            </div>
+                            <div class="max-h-[400px] overflow-y-auto">
+                                {% for notification in admin_notifications %}
+                                <a href="{% url 'custom_admin:mark_read' notification.pk %}"
+                                    class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition border-b last:border-0 dark:border-gray-700">
+                                    <div class="flex items-start space-x-3">
+                                        <div
+                                            class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-shopping-bag text-blue-600 dark:text-blue-400"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-semibold text-gray-800 dark:text-white">
+                                                {{ notification.title }}
+                                            </p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                {{ notification.message }}
+                                            </p>
+                                            <p class="text-[10px] text-gray-400 mt-2">
+                                                {{ notification.created_at|timesince }} ago</p>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% empty %}
+                                <div class="p-8 text-center">
+                                    <i class="fas fa-bell-slash text-gray-300 text-4xl mb-3"></i>
+                                    <p class="text-gray-500 text-sm">No new notifications</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Menu -->
+                    <div class="relative">
+                        <a href="/"
+                            class="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                            <i class="fas fa-home text-gray-600 dark:text-gray-300"></i>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">View Site</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Messages (Handled by SweetAlert2) -->
+        <script>
+            {% if messages %}
+            document.addEventListener('DOMContentLoaded', () => {
+                {% for message in messages %}
+                Swal.fire({
+                    icon: '{{ message.tags }}' === 'error' ? 'error' : '{{ message.tags }}',
+                    title: '{{ message.tags|title }}',
+                    text: '{{ message|escapejs }}',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 5000,
+                    timerProgressBar: true
+                });
+                {% endfor %}
+            });
+            {% endif %}
+        </script>
+
+        <!-- Page Content -->
+        <main class="p-6">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 px-6 mt-8">
+            <div class="text-center text-sm text-gray-600 dark:text-gray-400">
+                &copy; 2026 E-Commerce Admin Panel. All rights reserved.
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Sidebar toggle
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const navTexts = document.querySelectorAll('.nav-text');
+        const logoText = document.getElementById('logo-text');
+
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            navTexts.forEach(text => {
+                text.classList.toggle('hidden');
+            });
+            logoText.classList.toggle('hidden');
+        });
+
+        // Dark mode toggle
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const html = document.documentElement;
+
+        // Check for saved dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            html.classList.add('dark');
+        }
+
+        darkModeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.setItem('darkMode', html.classList.contains('dark'));
+        });
+
+        // Messages are handled by SweetAlert2
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

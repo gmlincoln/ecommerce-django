@@ -11,6 +11,7 @@ urlpatterns = [
 
 urlpatterns += i18n_patterns(
     path('admin/', admin.site.urls),
+    path('custom-admin/', include('apps.custom_admin.urls')),
     path('', include('apps.store.urls')),
     path('accounts/', include('apps.accounts.urls')),
     path('orders/', include('apps.orders.urls')),

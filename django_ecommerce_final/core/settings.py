@@ -11,7 +11,7 @@ INSTALLED_APPS = [
  'django.contrib.admin','django.contrib.auth','django.contrib.contenttypes',
  'django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles',
  'django.contrib.humanize',
- 'apps.accounts','apps.store','apps.orders',
+ 'apps.accounts','apps.store','apps.orders','apps.custom_admin',
 ]
 
 MIDDLEWARE = [
@@ -36,6 +36,7 @@ TEMPLATES=[{
   'django.contrib.auth.context_processors.auth',
   'django.contrib.messages.context_processors.messages',
   'django.template.context_processors.i18n',
+  'apps.custom_admin.context_processors.admin_notifications',
  ]}
 }]
 

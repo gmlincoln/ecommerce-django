@@ -1,0 +1,48 @@
+{% extends 'custom_admin/base_admin.html' %}
+{% block title %}Categories{% endblock %}
+{% block page_title %}Category Management{% endblock %}
+{% block content %}
+<div class="mb-6">
+    <a href="{% url 'custom_admin:category_create' %}"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition inline-flex items-center space-x-2 shadow-lg">
+        <i class="fas fa-plus"></i><span>Add Category</span>
+    </a>
+</div>
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50 dark:bg-gray-700">
+            <tr>
+                <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700 dark:text-gray-300">Name</th>
+                <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700 dark:text-gray-300">Slug</th>
+                <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700 dark:text-gray-300">Icon</th>
+                <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700 dark:text-gray-300">Products</th>
+                <th class="text-right py-4 px-6 text-sm font-semibold text-gray-700 dark:text-gray-300">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            {% for category in categories %}
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td class="py-4 px-6 font-medium text-gray-800 dark:text-white">{{ category.name }}</td>
+                <td class="py-4 px-6 text-gray-600 dark:text-gray-400">{{ category.slug }}</td>
+                <td class="py-4 px-6"><i class="{{ category.icon }} text-blue-600"></i></td>
+                <td class="py-4 px-6 text-gray-600 dark:text-gray-400">{{ category.product_count }} products</td>
+                <td class="py-4 px-6">
+                    <div class="flex items-center justify-end space-x-2">
+                        <a href="{% url 'custom_admin:category_edit' category.pk %}"
+                            class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-lg transition"><i
+                                class="fas fa-edit"></i></a>
+                        <a href="{% url 'custom_admin:category_delete' category.pk %}"
+                            class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg transition"><i
+                                class="fas fa-trash"></i></a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="py-12 text-center text-gray-500">No categories found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

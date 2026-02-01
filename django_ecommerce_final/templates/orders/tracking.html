@@ -153,24 +153,26 @@
                     {% endif %}
                 </h3>
                 <p class="text-red-700 text-sm mb-4">
-                    {% if order.status == 'pending' %}
-                    {% trans "Your order will be cancelled in" %}
-                    {{ order.minutes_remaining }}
-                    {% trans "minutes. Complete payment now." %}
-                    {% else %}
-                    {% trans "Payment failed. You can try again to complete the order." %}
-                    {% endif %}
+                    {% trans "Repayment within" %} {{ order.minutes_remaining }} {% trans "minutes otherwise it will
+                    cancel." %}
                 </p>
-                <a href="{% url 'ssl_payment' order.id %}"
-                    class="inline-block bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 transition-colors">
-                    💳
-                    {% if order.status == 'pending' %}
-                    {% trans "Pay Now" %}
-                    {% else %}
-                    {% trans "Try Again" %}
-                    {% endif %}
-                    - ৳ {{ order.total }}
-                </a>
+                <div class="flex gap-4">
+                    <a href="{% url 'ssl_payment' order.id %}"
+                        class="inline-block bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 transition-colors">
+                        💳
+                        {% if order.status == 'pending' %}
+                        {% trans "Pay Now" %}
+                        {% else %}
+                        {% trans "Try Again" %}
+                        {% endif %}
+                        - ৳ {{ order.total }}
+                    </a>
+                    <a href="{% url 'cancel_order' order.id %}"
+                        class="inline-block bg-white text-gray-700 border border-gray-300 px-6 py-3 rounded-lg font-bold hover:bg-gray-50 hover:text-red-600 transition-colors"
+                        onclick="return confirm('{% trans 'Are you sure you want to cancel this order?' %}')">
+                        {% trans "Cancel Order" %}
+                    </a>
+                </div>
             </div>
             {% endif %}
 

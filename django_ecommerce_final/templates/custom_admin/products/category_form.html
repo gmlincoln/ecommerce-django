@@ -1,0 +1,30 @@
+{% extends 'custom_admin/base_admin.html' %}
+{% block title %}{{ action }} Category{% endblock %}
+{% block page_title %}{{ action }} Category{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
+        <form method="post">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category Name</label>
+                    {{ form.name }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Icon Class</label>
+                    {{ form.icon }}
+                    <p class="text-sm text-gray-500 mt-1">FontAwesome class (e.g., fas fa-tag)</p>
+                </div>
+            </div>
+            <div class="flex items-center justify-end space-x-4 mt-6">
+                <a href="{% url 'custom_admin:category_list' %}"
+                    class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">Cancel</a>
+                <button type="submit"
+                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"><i
+                        class="fas fa-save mr-2"></i>Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

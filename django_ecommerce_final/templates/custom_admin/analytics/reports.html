@@ -1,0 +1,72 @@
+{% extends 'custom_admin/base_admin.html' %}
+{% block title %}Analytics{% endblock %}
+{% block page_title %}Analytics & Reports{% endblock %}
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Sales Trend</h3>
+        <canvas id="salesChart" height="300"></canvas>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Top Products</h3>
+        <div class="space-y-3">
+            {% for product in top_products %}
+            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div class="flex items-center space-x-3">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-12 h-12 rounded object-cover">
+                    {% endif %}
+                    <div>
+                        <p class="font-medium text-gray-800 dark:text-white">{{ product.name }}</p>
+                        <p class="text-sm text-gray-500">৳{{ product.price }}</p>
+                    </div>
+                </div>
+                <p class="font-semibold text-blue-600">{{ product.total_sold|default:0 }} sold</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <h4 class="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Revenue</h4>
+        <p class="text-3xl font-bold text-blue-600">৳{{ stats.total_revenue|floatformat:2 }}</p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <h4 class="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Orders</h4>
+        <p class="text-3xl font-bold text-green-600">{{ stats.total_orders }}</p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <h4 class="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Customers</h4>
+        <p class="text-3xl font-bold text-purple-600">{{ stats.total_users }}</p>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const salesData = {{ sales_data| safe }};
+    const labels = salesData.map(item => new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    const data = salesData.map(item => item.revenue);
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Revenue (৳)',
+                data: data,
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+</script>
+{% endblock %}

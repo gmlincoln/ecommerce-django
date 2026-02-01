@@ -1,0 +1,54 @@
+{% extends 'custom_admin/base_admin.html' %}
+{% block title %}Campaigns{% endblock %}
+{% block page_title %}Campaign Management{% endblock %}
+{% block content %}
+<div class="mb-6">
+    <a href="{% url 'custom_admin:campaign_create' %}"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition inline-flex items-center space-x-2 shadow-lg">
+        <i class="fas fa-plus"></i><span>Create Campaign</span>
+    </a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for campaign in campaigns %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+        {% if campaign.image %}
+        <img src="{{ campaign.image.url }}" alt="{{ campaign.title }}" class="w-full h-48 object-cover">
+        {% else %}
+        <div class="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <i class="fas fa-bullhorn text-gray-400 text-4xl"></i>
+        </div>
+        {% endif %}
+        <div class="p-6">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">{{ campaign.title }}</h3>
+            <div class="space-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <p><i class="fas fa-calendar mr-2"></i>
+                    {{ campaign.start_time|date:"M d, Y" }} - {{ campaign.end_time|date:"M d, Y" }}</p>
+                <p><i class="fas fa-box mr-2"></i>{{ campaign.products.count }} products</p>
+                <p><i class="fas fa-percentage mr-2 text-blue-500"></i><span class="font-bold text-blue-600">
+                        {{ campaign.discount_percentage }}% Discount</span></p>
+                <p>
+                    {% if campaign.is_active %}
+                    <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Active</span>
+                    {% else %}
+                    <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">Inactive</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <a href="{% url 'custom_admin:campaign_edit' campaign.pk %}"
+                    class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg transition text-center"><i
+                        class="fas fa-edit"></i> Edit</a>
+                <a href="{% url 'custom_admin:campaign_delete' campaign.pk %}"
+                    class="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg transition"><i
+                        class="fas fa-trash"></i></a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-span-3 text-center py-12">
+        <i class="fas fa-bullhorn text-gray-300 text-6xl mb-4"></i>
+        <p class="text-gray-500 text-lg">No campaigns found</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

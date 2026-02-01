@@ -26,17 +26,17 @@
     <!-- Products Header -->
     <div class="flex items-center justify-between mb-12">
         <div>
-            <h2 class="text-3xl font-black text-gray-900">Campaign Exclusive Products</h2>
-            <p class="text-gray-500 font-medium">Limited time offers</p>
+            <h2 class="text-3xl font-black text-gray-900">Campaign Products</h2>
+            <p class="text-gray-500 font-medium">Browse our exclusive selection for this event</p>
         </div>
-        <div class="h-1 bg-yellow-400 w-24"></div>
+        <div class="h-1 bg-blue-600 w-24"></div>
     </div>
 
     <!-- Products Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {% for p in products %}
         <div
-            class="bg-white rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden product-card group flex flex-col h-full border border-yellow-200">
+            class="bg-white rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden product-card group flex flex-col h-full border border-gray-100">
             <!-- Image Container -->
             <div class="relative overflow-hidden bg-gray-50 h-64 flex-shrink-0">
                 <a
@@ -51,19 +51,6 @@
                     </div>
                     {% endif %}
                 </a>
-
-                <div
-                    class="absolute top-4 left-4 bg-red-600 text-white text-sm font-black px-4 py-2 rounded-full uppercase tracking-widest">
-                    Save {{ campaign.discount_percent }}%</div>
-
-                <!-- Quick View Overlay -->
-                <div
-                    class="absolute inset-0 bg-blue-600/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 flex items-center justify-center">
-                    <a href="{% if p.slug %}{% url 'product_detail' p.slug %}{% else %}{% url 'product_detail_id' p.id %}{% endif %}"
-                        class="bg-white text-blue-600 px-6 py-2 rounded-full font-bold shadow-lg hover:bg-blue-600 hover:text-white transition-colors flex items-center gap-2">
-                        <i class="fas fa-eye"></i> View Details
-                    </a>
-                </div>
             </div>
 
             <!-- Product Info -->
@@ -74,16 +61,25 @@
                         {{p.name}}</h2>
                 </a>
 
-                <div class="flex flex-col mt-4">
-                    <p class="text-gray-400 text-sm line-through">৳ {{p.price}}</p>
-                    <p class="text-green-600 text-2xl font-black campaign-discount-price" data-price="{{p.price}}" data-discount="{{ campaign.discount_percent }}">৳ 0</p>
+                <div class="flex items-center justify-between mt-4">
+                    {% with campaign=p.get_active_campaign %}
+                    {% if campaign %}
+                    <div class="flex flex-col">
+                        <p class="text-blue-600 text-xl font-black leading-none">৳ {{p.get_display_price}}</p>
+                        <p class="text-gray-400 text-xs line-through mt-1">৳ {{p.price}}</p>
+                    </div>
+                    <span class="bg-green-100 text-green-600 text-[10px] font-black px-2 py-1 rounded">
+                        -{{ campaign.discount_percentage }}%
+                    </span>
+                    {% else %}
+                    <p class="text-blue-600 text-xl font-black">৳ {{p.price}}</p>
+                    {% endif %}
+                    {% endwith %}
                 </div>
 
                 <div class="mt-6 pt-6 border-t border-gray-50">
-                    <a href="{% url 'add_to_cart_campaign' p.id campaign.id %}"
-                        class="w-full bg-yellow-400 text-gray-900 px-4 py-2 rounded-xl block text-center font-bold hover:bg-yellow-300 transition-all duration-300 add-to-cart-btn shadow-lg"
-                        data-price="{{p.price}}"
-                        data-discount="{{ campaign.discount_percent }}">
+                    <a href="{% url 'add_to_cart' p.id %}"
+                        class="w-full bg-gray-900 text-white px-4 py-2 rounded-xl block text-center font-bold hover:bg-blue-600 transition-all duration-300 add-to-cart-btn shadow-lg">
                         <i class="fas fa-shopping-bag mr-2"></i><span>Add to Cart</span>
                     </a>
                 </div>
@@ -98,38 +94,4 @@
         {% endfor %}
     </div>
 </div>
-
-<script>
-    // Calculate campaign discount prices
-    document.querySelectorAll('.campaign-discount-price').forEach(el => {
-        const originalPrice = parseFloat(el.getAttribute('data-price'));
-        const discountPercent = parseInt(el.getAttribute('data-discount'));
-        const discountedPrice = originalPrice * (1 - discountPercent / 100);
-        el.textContent = '৳ ' + discountedPrice.toFixed(2);
-    });
-
-    // Handle add to cart with discounted price
-    document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
-        btn.addEventListener('click', function (e) {
-            const originalPrice = parseFloat(this.getAttribute('data-price'));
-            const discountPercent = parseInt(this.getAttribute('data-discount'));
-            const discountedPrice = originalPrice * (1 - discountPercent / 100);
-            
-            // Store the discounted price in session for cart
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = this.href;
-            
-            // Add discounted price as hidden field
-            const priceInput = document.createElement('input');
-            priceInput.type = 'hidden';
-            priceInput.name = 'discounted_price';
-            priceInput.value = discountedPrice.toFixed(2);
-            form.appendChild(priceInput);
-            
-            // Don't actually submit, just use the link behavior
-            // The cart will use the original price from the product
-        });
-    });
-</script>
 {% endblock %}

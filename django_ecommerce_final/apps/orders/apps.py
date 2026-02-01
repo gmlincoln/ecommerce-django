@@ -22,3 +22,5 @@ class OrdersConfig(AppConfig):
             return duplicate
             
         context.BaseContext.__copy__ = fixed_copy
+
+        import apps.orders.signals

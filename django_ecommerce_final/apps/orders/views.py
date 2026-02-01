@@ -35,12 +35,22 @@ def calculate_shipping_charge(division, district):
 
 @login_required
 def checkout(request):
-    cart = request.session.get('cart', {})
+    cart_obj = Cart(request)
+    cart = cart_obj.cart
     if not cart:
         return redirect('cart')
     
+    # Refresh prices one last time before calculating subtotal/total
+    for id, item in cart.items():
+        try:
+            product = Product.objects.get(id=id)
+            item['price'] = str(product.get_display_price())
+        except Product.DoesNotExist:
+            pass
+    cart_obj.save()
+    
     subtotal = sum(float(i['price']) * i['qty'] for i in cart.values())
-    total = subtotal  # Initialize total with subtotal as default
+    total = subtotal
     
     if request.method == 'POST':
         payment_method = request.POST.get('payment_method', 'sslcommerz')
@@ -50,6 +60,25 @@ def checkout(request):
         shipping_charge = calculate_shipping_charge(division, district)
         total = float(subtotal) + shipping_charge
         
+        phone = request.POST.get('phone')
+        if not phone:
+            messages.error(request, "Phone number is required to place an order.")
+            return redirect('checkout')
+
+        # Validate stock availability before creating order
+        for id, item in cart.items():
+            try:
+                product = Product.objects.get(id=id)
+                if not product.is_in_stock:
+                    messages.error(request, f"{product.name} is out of stock. Please remove it from cart.")
+                    return redirect('cart')
+                if item['qty'] > product.stock:
+                    messages.error(request, f"Only {product.stock} units of {product.name} available. Please update your cart.")
+                    return redirect('cart')
+            except Product.DoesNotExist:
+                messages.error(request, "Some products in your cart are no longer available.")
+                return redirect('cart')
+
         # Create order with address information
         order = Order.objects.create(
             user=request.user, 
@@ -178,7 +207,14 @@ def ssl_commerce_payment(request, order_id):
 @csrf_exempt
 def payment_success(request):
     """Handle successful payment from SSL Commerce"""
-    val_id = request.POST.get('val_id') or request.GET.get('val_id')
+    # If the response comes as a POST (common with SSLCommerz), 
+    # redirect to GET to ensure the session cookie is sent by the browser.
+    if request.method == 'POST':
+        val_id = request.POST.get('val_id')
+        if val_id:
+            return redirect(f"{request.path}?val_id={val_id}")
+    
+    val_id = request.GET.get('val_id')
     # Some gateways return as POST, some GET. Ensure we check both or adapt.
     # The library might expect just val_id.
     
@@ -211,10 +247,11 @@ def payment_success(request):
                         order.transaction_id = tran_id
                         order.save()
                         
-                        # Automatically log in the user to preserve session after SSLCommerz redirect
-                        if not request.user.is_authenticated:
-                            from django.contrib.auth import login
-                            login(request, order.user)
+                        # Deduct stock for each item in the order
+                        for item in order.orderitem_set.all():
+                            product = item.product
+                            product.stock -= item.quantity
+                            product.save()
                             
                         messages.success(request, 'Payment successful! Your order has been confirmed.')
                         return render(request, 'orders/success.html', {'order': order})
@@ -229,45 +266,23 @@ def payment_success(request):
             messages.error(request, 'Payment validation error.')
             return render(request, 'orders/fail.html')
     
-    # Fallback: Try to get order from tran_id in GET/POST params if val_id is not available
-    tran_id = request.POST.get('tran_id') or request.GET.get('tran_id')
-    if tran_id:
-        try:
-            order_id = tran_id.split('_')[1]
-            order = Order.objects.get(id=order_id)
-            
-            # Automatically log in the user to preserve session after SSLCommerz redirect
-            if not request.user.is_authenticated:
-                from django.contrib.auth import login
-                login(request, order.user)
-            
-            order.status = 'completed'
-            order.transaction_id = tran_id
-            order.save()
-            
-            messages.success(request, 'Payment successful! Your order has been confirmed.')
-            return render(request, 'orders/success.html', {'order': order})
-        except (Order.DoesNotExist, IndexError, ValueError):
-            pass
-    
     messages.error(request, 'Invalid payment response.')
     return render(request, 'orders/fail.html')
 
 @csrf_exempt
 def payment_fail(request):
     """Handle failed payment from SSL Commerce"""
-    transaction_id = request.GET.get('tran_id') or request.POST.get('tran_id')
+    if request.method == 'POST':
+        transaction_id = request.POST.get('tran_id')
+        if transaction_id:
+            return redirect(f"{request.path}?tran_id={transaction_id}")
+
+    transaction_id = request.GET.get('tran_id')
     order_id = transaction_id.split('_')[1] if transaction_id else None
     
     if order_id:
         try:
             order = Order.objects.get(id=order_id)
-            
-            # Automatically log in the user to preserve session after SSLCommerz redirect
-            if not request.user.is_authenticated:
-                from django.contrib.auth import login
-                login(request, order.user)
-            
             # Check for expiration if payment failed
             order.check_and_cancel_if_expired()
             if order.status != 'cancelled':
@@ -287,21 +302,25 @@ def payment_fail(request):
 @csrf_exempt
 def payment_cancel(request):
     """Handle cancelled payment from SSL Commerce"""
-    transaction_id = request.GET.get('tran_id') or request.POST.get('tran_id')
+    if request.method == 'POST':
+        transaction_id = request.POST.get('tran_id')
+        if transaction_id:
+            return redirect(f"{request.path}?tran_id={transaction_id}")
+
+    transaction_id = request.GET.get('tran_id')
     order_id = transaction_id.split('_')[1] if transaction_id else None
     
     if order_id:
         try:
             order = Order.objects.get(id=order_id)
+            # Treat cancellation as a failed payment to allow retry within timeout
+            order.check_and_cancel_if_expired()
+            if order.status != 'cancelled':
+                order.status = 'failed'
+                order.save()
+                messages.warning(request, 'Payment cancelled. You can try again.')
+                return render(request, 'orders/fail.html', {'order': order})
             
-            # Automatically log in the user to preserve session after SSLCommerz redirect
-            if not request.user.is_authenticated:
-                from django.contrib.auth import login
-                login(request, order.user)
-            
-            order.status = 'cancelled'
-            order.save()
-            messages.warning(request, 'Payment cancelled.')
             return render(request, 'orders/cancel.html', {'order': order})
         except Order.DoesNotExist:
             pass
@@ -339,7 +358,7 @@ def orders(request):
         # Check for expiration before processing
         order.check_and_cancel_if_expired()
         
-        if (order.status == 'pending' and 
+        if ((order.status == 'pending' or order.status == 'failed') and 
             order.payment_method == 'sslcommerz' and 
             order.payment_timeout and 
             order.payment_timeout > now):
@@ -360,11 +379,13 @@ def paymentable_orders(request):
     from django.utils import timezone
     now = timezone.now()
     
+    from django.db.models import Q
     orders = Order.objects.filter(
         user=request.user,
-        status='pending',
         payment_method='sslcommerz',
         payment_timeout__gt=now
+    ).filter(
+        Q(status='pending') | Q(status='failed')
     ).prefetch_related('orderitem_set__product').order_by('payment_timeout')
     
     # Add payment warning info
@@ -389,6 +410,12 @@ def cod_success(request, order_id):
     order.status = 'completed'
     order.save()
     
+    # Deduct stock for each item in the order
+    for item in order.orderitem_set.all():
+        product = item.product
+        product.stock -= item.quantity
+        product.save()
+    
     return render(request, 'orders/cod_success.html', {'order': order})
 
 @login_required
@@ -408,7 +435,7 @@ def order_tracking(request):
             now = timezone.now()
             
             if (order.payment_method == 'sslcommerz' and 
-                order.status == 'pending' and 
+                (order.status == 'pending' or order.status == 'failed') and 
                 order.payment_timeout and 
                 order.payment_timeout > now):
                 
@@ -432,10 +459,17 @@ def cancel_order(request, order_id):
     """Manually cancel a pending order"""
     order = get_object_or_404(Order, id=order_id, user=request.user)
     
-    if order.status == 'pending':
+    if order.status == 'pending' or order.status == 'failed':
         order.status = 'cancelled'
         order.delivery_status = 'cancelled'
         order.save()
+        
+        # Restore stock for cancelled orders
+        for item in order.orderitem_set.all():
+            product = item.product
+            product.stock += item.quantity
+            product.save()
+        
         messages.success(request, f'Order #{order.order_number} has been cancelled.')
     else:
         messages.error(request, 'This order cannot be cancelled.')

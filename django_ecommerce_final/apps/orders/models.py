@@ -55,13 +55,13 @@ class Order(models.Model):
   
   # Set payment timeout for SSL Commerce orders
   if self.payment_method == 'sslcommerz' and not self.payment_timeout:
-   self.payment_timeout = timezone.now() + timezone.timedelta(minutes=10)
+   self.payment_timeout = timezone.now() + timezone.timedelta(minutes=30)
    
   super().save(*args, **kwargs)
  
  def check_and_cancel_if_expired(self):
   """Check if SSLCommerz order is expired and cancel if so"""
-  if (self.status == 'pending' and 
+  if ((self.status == 'pending' or self.status == 'failed') and 
    self.payment_method == 'sslcommerz' and 
    self.payment_timeout and 
    self.payment_timeout < timezone.now()):

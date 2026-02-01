@@ -1,0 +1,135 @@
+{% extends 'custom_admin/base_admin.html' %}
+
+{% block title %}{{ action }} Product{% endblock %}
+{% block page_title %}{{ action }} Product{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
+        <form method="post" enctype="multipart/form-data" id="productForm">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Product Name -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Product Name <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Category -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Category
+                    </label>
+                    {{ form.category }}
+                    {% if form.category.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.category.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Price -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Price (৳) <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.price }}
+                    {% if form.price.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.price.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Stock -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Stock Quantity <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.stock }}
+                    {% if form.stock.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.stock.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Is Featured -->
+                <div class="flex items-center">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        {{ form.is_featured }}
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Featured Product</span>
+                    </label>
+                </div>
+
+                <!-- Description -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Description
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Image Upload -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Product Image
+                    </label>
+                    <div class="flex items-start space-x-4">
+                        <div id="imagePreview"
+                            class="w-32 h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center overflow-hidden">
+                            {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="Preview" class="w-full h-full object-cover">
+                            {% else %}
+                            <i class="fas fa-image text-gray-400 text-3xl"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1">
+                            {{ form.image }}
+                            {% if form.image.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ form.image.errors.0 }}</p>
+                            {% endif %}
+                            <p class="text-sm text-gray-500 mt-2">Recommended: 800x800px, Max 2MB</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div
+                class="flex items-center justify-end space-x-4 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <a href="{% url 'custom_admin:product_list' %}"
+                    class="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium">
+                    Cancel
+                </a>
+                <button type="submit"
+                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium shadow-lg">
+                    <i class="fas fa-save mr-2"></i>{{ action }} Product
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Image preview
+    const imageInput = document.querySelector('input[type="file"]');
+    const imagePreview = document.getElementById('imagePreview');
+
+    if (imageInput) {
+        imageInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview" class="w-full h-full object-cover">`;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+</script>
+{% endblock %}

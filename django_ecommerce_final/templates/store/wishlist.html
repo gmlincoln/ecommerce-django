@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}My Wishlist - e-Shop{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">
+            <i class="fas fa-heart text-pink-500 mr-2"></i>
+            {% trans "My Wishlist" %}
+        </h1>
+        <p class="text-gray-600">
+            {% if wishlist_count > 0 %}
+            {% blocktrans count counter=wishlist_count %}You have {{ counter }} item in your wishlist{% plural %}You
+            have {{ counter }} items in your wishlist{% endblocktrans %}
+            {% else %}
+            {% trans "Your wishlist is empty" %}
+            {% endif %}
+        </p>
+    </div>
+
+    {% if wishlist_items %}
+    <!-- Wishlist Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {% for item in wishlist_items %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
+            <!-- Product Image -->
+            <div class="relative">
+                <a href="{% url 'product_detail' item.product.slug %}">
+                    {% if item.product.image %}
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}"
+                        class="w-full h-64 object-cover">
+                    {% else %}
+                    <div class="w-full h-64 bg-gray-200 flex items-center justify-center">
+                        <i class="fas fa-image text-gray-400 text-4xl"></i>
+                    </div>
+                    {% endif %}
+                </a>
+
+                <!-- Stock Badge -->
+                {% if not item.in_stock %}
+                <div class="absolute top-2 left-2 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                    {% trans "Out of Stock" %}
+                </div>
+                {% elif item.stock <= 5 %} <div
+                    class="absolute top-2 left-2 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                    {% trans "Low Stock" %}
+            </div>
+            {% endif %}
+
+            <!-- Remove Button -->
+            <form action="{% url 'remove_from_wishlist' item.product.id %}" method="POST"
+                class="absolute top-2 right-2">
+                {% csrf_token %}
+                <button type="submit"
+                    class="bg-white hover:bg-red-50 text-red-500 rounded-full p-2 shadow-md transition-colors"
+                    title="{% trans 'Remove from wishlist' %}">
+                    <i class="fas fa-times"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- Product Info -->
+        <div class="p-4">
+            <a href="{% url 'product_detail' item.product.slug %}"
+                class="text-lg font-semibold text-gray-800 hover:text-blue-600 line-clamp-2 mb-2 block">
+                {{ item.product.name }}
+            </a>
+
+            <!-- Price -->
+            <div class="mb-3">
+                <span class="text-2xl font-bold text-blue-600">৳{{ item.product.get_display_price }}</span>
+                {% if item.product.get_active_campaign %}
+                <span class="text-sm text-gray-500 line-through ml-2">৳{{ item.product.price }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Stock Status -->
+            <div class="mb-3">
+                {% if item.in_stock %}
+                <p class="text-sm text-green-600 font-semibold">
+                    <i class="fas fa-check-circle mr-1"></i>
+                    {% trans "In Stock" %} ({{ item.stock }} {% trans "available" %})
+                </p>
+                {% else %}
+                <p class="text-sm text-red-600 font-semibold">
+                    <i class="fas fa-times-circle mr-1"></i>
+                    {% trans "Out of Stock" %}
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="space-y-2">
+                {% if item.in_stock %}
+                <a href="{% url 'add_to_cart' item.product.id %}"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-center transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-shopping-cart"></i>
+                    {% trans "Add to Cart" %}
+                </a>
+                {% else %}
+                <!-- Out of Stock - Show Notification Options -->
+                {% if item.restock_subscribed %}
+                <div
+                    class="bg-green-50 border border-green-500 text-green-700 px-4 py-2 rounded-lg text-sm font-semibold text-center">
+                    <i class="fas fa-bell"></i> {% trans "Notification Active" %}
+                </div>
+                <a href="{% url 'unsubscribe_restock' item.product.id %}"
+                    class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold text-center transition-colors flex items-center justify-center gap-2 text-sm">
+                    <i class="fas fa-bell-slash"></i>
+                    {% trans "Cancel Notification" %}
+                </a>
+                {% else %}
+                <a href="{% url 'subscribe_restock' item.product.id %}"
+                    class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold text-center transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-bell"></i>
+                    {% trans "Notify Me" %}
+                </a>
+                {% endif %}
+                {% endif %}
+            </div>
+
+            <!-- Added Date -->
+            <p class="text-xs text-gray-400 mt-3">
+                {% trans "Added" %} {{ item.wishlist_item.created_at|date:"M d, Y" }}
+            </p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Out of Stock Warning -->
+{% if wishlist_items|length > 0 %}
+{% with out_of_stock_count=wishlist_items|length %}
+{% if out_of_stock_count > 0 %}
+<div class="mt-8 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <i class="fas fa-exclamation-triangle text-yellow-400 text-xl"></i>
+        </div>
+        <div class="ml-3">
+            <p class="text-sm text-yellow-700">
+                <span class="font-semibold">{% trans "Note:" %}</span>
+                {% trans "Some items in your wishlist may be out of stock. We'll notify you when they're available again!" %}
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endwith %}
+{% endif %}
+
+{% else %}
+<!-- Empty Wishlist State -->
+<div class="text-center py-16">
+    <div class="mb-6">
+        <i class="fas fa-heart text-gray-300 text-8xl"></i>
+    </div>
+    <h2 class="text-2xl font-semibold text-gray-700 mb-3">{% trans "Your wishlist is empty" %}</h2>
+    <p class="text-gray-500 mb-6">{% trans "Start adding products you love to your wishlist!" %}</p>
+    <a href="{% url 'home' %}"
+        class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
+        <i class="fas fa-shopping-bag mr-2"></i>
+        {% trans "Continue Shopping" %}
+    </a>
+</div>
+{% endif %}
+</div>
+{% endblock %}
